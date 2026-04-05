@@ -196,6 +196,7 @@
             font-size: 1.8rem;
             margin-bottom: 5px;
             animation: pulse-heart 2s infinite;
+            font-family: 'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'Segoe UI Symbol', 'EmojiOne Color', 'Android Emoji', sans-serif;
         }
 
         @keyframes pulse-heart {
@@ -296,27 +297,38 @@
             pointer-events: auto;
             cursor: pointer;
             user-select: none;
-            width: 28px;
+            width: 29px;
             height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
+            border-radius: 46%;
             background: rgba(255,255,255,0.95);
             color: var(--heart-red);
             box-shadow: 0 6px 18px rgba(0,0,0,0.14);
-            font-size: 1.1rem;
-            border: 1px solid var(--heart-red);
+            font-size: 0.8rem;
+            border: 1px solid #dcdcdc;
             line-height: 1;
         }
 
-        .msg.me .heart-pill { display: none; }
+        .msg.me .heart-pill { left: -20px; }
+        .msg.me .heart-pill:not(.hearted) { display: none; }
+        .msg.me .heart-pill.hearted { display: flex; }
         .msg.them .heart-pill { right: -20px; }
 
         .msg:hover .heart-pill { opacity: 1; }
-        .msg .heart-pill.hearted {
+        .msg.them .heart-pill.hearted {
             opacity: 1;
             background: var(--velvet-berry);
+            color: white;
+            transform: translateY(-50%);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            animation: heartReact 0.6s ease;
+            border: 1px solid rgba(255, 77, 109, 0.4);
+        }
+        .msg.me .heart-pill.hearted {
+            opacity: 1;
+            background: var(--her-berry);
             color: white;
             transform: translateY(-50%);
             box-shadow: 0 8px 20px rgba(0,0,0,0.3);
@@ -341,6 +353,7 @@
             pointer-events: none;
             animation: floatUpSmall 1s ease-out forwards;
             z-index: 10;
+            font-family: 'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'Segoe UI Symbol', 'EmojiOne Color', 'Android Emoji', sans-serif;
         }
 
         @keyframes floatUpSmall {
@@ -677,7 +690,7 @@
         .reaction-popup.them-pill { background: var(--her-berry); border-color: var(--heart-red); }
         .inner-content { display: flex; flex-direction: row; align-items: center; gap: 12px; }
         .sender-tag { font-size: 0.55rem; color: rgba(255,255,255,0.7); font-weight: 800; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: 'Poppins'; text-transform: uppercase; }
-        .reaction-emoji { font-size: 2.5rem; display: inline-block; margin-top: 5px; font-family: 'Noto Color Emoji', sans-serif;} 
+        .reaction-emoji { font-size: 2.5rem; display: inline-block; margin-top: 5px; font-family: 'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji', 'Segoe UI Symbol', 'EmojiOne Color', 'Android Emoji', sans-serif; }
         .reaction-text { color: white; font-size: 1.2rem; font-weight: 600; white-space: nowrap; font-family: 'Poppins', sans-serif; margin-top: 5px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);}
 
         #esc-hint { position: absolute; top: 40px; left: 50%; transform: translate(-50%, -50%); color: white; font-family: 'Poppins', sans-serif; text-transform: uppercase; font-weight: 600; font-size: 0.75rem; letter-spacing: 3px; background: rgba(0, 0, 0, 0.6); padding: 12px 35px; border-radius: 50px; border: 2.5px solid white; text-shadow: 0 2px 4px rgba(0,0,0,0.8); opacity: 0; pointer-events: none; transition: 1.2s; z-index: 1000; white-space: nowrap; backdrop-filter: blur(5px); }
@@ -2191,59 +2204,78 @@
                     let secondMsg = "";
 
                     function showPresenceNotification(msgText, soundFile) {
-                    const alertBox = document.getElementById('presence-alert');
-                    alertBox.innerText = msgText;
-                    alertBox.classList.add('show');
-                    setTimeout(() => alertBox.classList.remove('show'), 5000);
+                        const alertBox = document.getElementById('presence-alert');
+                        alertBox.innerText = msgText;
+                        alertBox.classList.add('show');
+                        setTimeout(() => alertBox.classList.remove('show'), 5000);
 
-                    if (isChatHidden || document.fullscreenElement) {
-                        const fsInd = document.getElementById('fs-typing-indicator');
-                        fsInd.innerHTML = `🔔 ${msgText}`;
-                        fsInd.classList.add('visible');
-                        setTimeout(() => fsInd.classList.remove('visible'), 5000);
-                    }
-
-                    if (soundFile) playSound(soundFile);
-                }
-
-                if (isPartnerOnline) {
-                    if (!globalLastOnlineState && !globalIsFirstLoad) {
-                        // Partner just came online (not on first load)
-                        if (mySymbol === 'X') {
-                            msg = `${validName} joined the room... 💖`;
-                        } else {
-                            msg = `Our screen, our story... welcome home, ${myName}. 💖`;
-                        }
-                        if (mySymbol === 'O') {
-                            showSecondNotif = true;
-                            secondMsg = `${validName} is already here... 💖`;
+                        if (isChatHidden || document.fullscreenElement) {
+                            const fsInd = document.getElementById('fs-typing-indicator');
+                            fsInd.innerHTML = `🔔 ${msgText}`;
+                            fsInd.classList.add('visible');
+                            setTimeout(() => fsInd.classList.remove('visible'), 5000);
                         }
 
-                        showPresenceNotification(msg, 'user-joined.mp3');
+                        if (soundFile) playSound(soundFile);
+                    }
 
-                        if (showSecondNotif) {
-                            const capturedSecondMsg = secondMsg;
-                            setTimeout(() => {
-                                showPresenceNotification(capturedSecondMsg, 'user-joined.mp3');
-                            }, 5000);
+                    if (isPartnerOnline) {
+                        if (!globalLastOnlineState && !globalIsFirstLoad) {
+                            // Partner just came online (not on first load)
+                            if (mySymbol === 'X') {
+                                msg = `${validName} joined the room... 💖`;
+                            } else {
+                                msg = `Our screen, our story... welcome home, ${myName}. 💖`;
+                            }
+                            if (mySymbol === 'O') {
+                                showSecondNotif = true;
+                                secondMsg = `${validName} is already here... 💖`;
+                            }
+
+                            showPresenceNotification(msg, 'user-joined.mp3');
+
+                            if (showSecondNotif) {
+                                const capturedSecondMsg = secondMsg;
+                                setTimeout(() => {
+                                    showPresenceNotification(capturedSecondMsg, 'user-joined.mp3');
+                                }, 5000);
+                            }
+                        }
+                    } else {
+                        if (globalLastOnlineState === true && !globalIsFirstLoad) {
+                            msg = `The room feels empty without you, ${partnerName}... come back soon. 🥀`;
+                            showPresenceNotification(msg, 'user-disconnected.mp3');
                         }
                     }
-                } else {
-                    if (globalLastOnlineState === true && !globalIsFirstLoad) {
-                        msg = `The room feels empty without you, ${partnerName}... come back soon. 🥀`;
-                        showPresenceNotification(msg, 'user-disconnected.mp3');
+
+                    globalLastOnlineState = !!isPartnerOnline;
+
+                    // Mark that we've processed the first load
+                    if (globalIsFirstLoad) {
+                        globalIsFirstLoad = false;
                     }
                 }
 
-                globalLastOnlineState = !!isPartnerOnline;
-                    globalLastOnlineState = !!isPartnerOnline; 
-                }
-                
-                // Mark that we've processed the first load
-                if (globalIsFirstLoad) {
-                    globalIsFirstLoad = false;
+            database.ref('rooms/' + roomID + '/savedVideoState').on('value', snap => {
+                const d = snap.val();
+                if (!d || !d.savedAt) {
+                    hasSavedVideoStateLoaded = true;
+                    return;
                 }
 
+                if (!hasSavedVideoStateLoaded) {
+                    hasSavedVideoStateLoaded = true;
+                    lastSavedVideoStateTime = d.savedAt;
+                    return;
+                }
+
+                if (d.savedAt === lastSavedVideoStateTime && d.savedBy === myName) return;
+
+                const savedTime = typeof d.timestamp === 'number' ? d.timestamp.toFixed(1) : '0.0';
+                const author = d.savedBy === myName ? 'You' : (d.savedBy || 'Your partner');
+                showSaveStateNotification(`💾 ${author} saved the movie at ${savedTime}s`);
+                lastSavedVideoStateTime = d.savedAt;
+            });
                 const isEmpty = !d.videoSrc || d.videoSrc === "";
                 const isMyLoad = (mySymbol === 'X' ? d.loadingX : d.loadingO);
                 const isLoading = (isPartnerOnline) ? (d.loadingX || d.loadingO) : isMyLoad;
@@ -2584,17 +2616,20 @@
                 `;
             }
 
-            div.addEventListener('dblclick', (event) => {
-                if (event.target.closest('.heart-pill')) return;
-                toggleHeart(key);
-            });
-            div.addEventListener('click', (event) => {
-                const targetHeart = event.target.closest('.heart-pill');
-                if (targetHeart) {
-                    event.stopPropagation();
+            const isOwnMessage = m.sender === myName;
+            if (!isOwnMessage) {
+                div.addEventListener('dblclick', (event) => {
+                    if (event.target.closest('.heart-pill')) return;
                     toggleHeart(key);
-                }
-            });
+                });
+                div.addEventListener('click', (event) => {
+                    const targetHeart = event.target.closest('.heart-pill');
+                    if (targetHeart) {
+                        event.stopPropagation();
+                        toggleHeart(key);
+                    }
+                });
+            }
 
             const messageContainer = document.getElementById('chat-messages');
             messageContainer.appendChild(div);
@@ -2710,6 +2745,23 @@
             database.ref('rooms/' + roomID + '/lastPlayback').set(payload).catch(() => {});
         }
 
+        let lastSavedVideoStateTime = null;
+        let hasSavedVideoStateLoaded = false;
+
+        function showSaveStateNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'save-state-notif';
+            notification.textContent = message;
+            const container = document.getElementById('video-container') || document.body;
+            container.appendChild(notification);
+
+            void notification.offsetWidth;
+            notification.classList.add('visible');
+
+            setTimeout(() => notification.classList.remove('visible'), 2500);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
         function saveVideoState() {
             if (!roomID || !video || !video.src) {
                 alert('No video is currently playing!');
@@ -2731,19 +2783,9 @@
 
             // Save to database, discarding any previous save
             database.ref('rooms/' + roomID + '/savedVideoState').set(payload).then(() => {
-                // Show feedback (smooth transition and requested velvet berry style)
-                const notification = document.createElement('div');
-                notification.className = 'save-state-notif';
-                notification.textContent = `💾 Saved! Ready to continue at ${video.currentTime.toFixed(1)}s`;
-                const container = document.getElementById('video-container') || document.body;
-                container.appendChild(notification);
-
-                // force reflow so transition from 0 to visible works
-                void notification.offsetWidth;
-                notification.classList.add('visible');
-
-                setTimeout(() => notification.classList.remove('visible'), 2500);
-                setTimeout(() => notification.remove(), 3000);
+                lastSavedVideoStateTime = payload.savedAt;
+                const author = payload.savedBy === myName ? 'You' : payload.savedBy || 'Someone';
+                showSaveStateNotification(`💾 ${author} saved the movie at ${payload.timestamp.toFixed(1)}s`);
             }).catch((err) => {
                 alert('Failed to save: ' + (err.message || 'Unknown error'));
             });
