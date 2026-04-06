@@ -277,7 +277,7 @@
         }
 
         #chat-header { height: 60px; display: flex; align-items: center; justify-content: center; background: white; font-family: 'Dancing Script'; font-size: 1.5rem; color: var(--heart-red); border-bottom: 1px solid #eee; flex-shrink: 0; }
-        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; min-height: 0; }
         .msg { position: relative; font-family: 'Poppins', sans-serif; padding: 12px 15px 26px; border-radius: 18px; font-size: 0.85rem; max-width: 85%; min-width: 70px; overflow-wrap: break-word; line-height: 1.4; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .msg.me { align-self: flex-end; background: var(--heart-red); color: white; border-bottom-right-radius: 2px; }
         .msg.them { align-self: flex-start; background: white; color: #444; border-bottom-left-radius: 2px; border: 1px solid #ffe1e6; }
@@ -290,50 +290,92 @@
 
         .msg .heart-pill {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            opacity: 0;
-            transition: opacity 0.2s ease, transform 0.2s ease, top 0.2s ease, bottom 0.2s ease;
-            pointer-events: auto;
-            cursor: pointer;
-            user-select: none;
-            width: 29px;
-            height: 28px;
-            display: flex;
+            bottom: -14px;
+            left: 8px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            display: none;
             align-items: center;
             justify-content: center;
-            border-radius: 46%;
-            background: rgba(255,255,255,0.95);
-            color: var(--heart-red);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.14);
-            font-size: 0.8rem;
-            border: 1px solid #dcdcdc;
+            font-size: 0.75rem;
+            z-index: 11;
+            animation: heartPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            user-select: none;
+            pointer-events: auto;
             line-height: 1;
         }
 
-        .msg.me .heart-pill { left: -20px; }
-        .msg.me .heart-pill:not(.hearted) { display: none; }
-        .msg.me .heart-pill.hearted { display: flex; }
-        .msg.them .heart-pill { right: -20px; }
-
-        .msg:hover .heart-pill { opacity: 1; }
-        .msg.them .heart-pill.hearted {
-            opacity: 1;
-            background: var(--velvet-berry);
-            color: white;
-            transform: translateY(-50%);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            animation: heartReact 0.6s ease;
-            border: 1px solid rgba(255, 77, 109, 0.4);
+        .msg.me .heart-pill {
+            left: 8px;
+            background: white;
+            color: var(--heart-red);
+            border: 1.5px solid var(--heart-red);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .msg.me .heart-pill.hearted {
+            display: flex;
             opacity: 1;
-            background: var(--her-berry);
-            color: white;
-            transform: translateY(-50%);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            animation: heartReact 0.6s ease;
-            border: 1px solid rgba(255, 77, 109, 0.4);
+            background: white;
+            color: var(--heart-red);
+            border: 1.5px solid var(--heart-red);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+       
+        .msg.them .heart-pill {
+            left: 8px;
+            background: var(--velvet-berry);
+            color: var(--heart-red);
+            border: 1.5px solid rgba(255, 77, 109, 0.4);
+            box-shadow: 0 4px 8px rgba(100, 10, 35, 0.3);
+            border: none;
+        }
+
+        .msg.them:hover .heart-pill {
+            display: flex;
+            opacity: 1;
+        }
+        .msg.them:hover .heart-pill:not(.hearted) {
+            background: #ffffff;
+            border: 1px solid #dcdcdc;
+            color: #ccc;
+        }
+        .msg.them .heart-pill.hearted {
+            display: flex;
+            opacity: 1;
+            background: var(--velvet-berry);
+            color: var(--heart-red);
+            box-shadow: 0 4px 8px rgba(100, 10, 35, 0.3);
+            border: none;
+        }
+        .msg.me .heart-pill.hearted {
+            display: flex;
+            opacity: 1;
+            background: white;
+            color: var(--heart-red);
+            border: 1.5px solid var(--heart-red);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .msg.me .heart-pill.hearted span {
+            text-shadow: 0 0 8px rgba(255, 77, 109, 0.8);
+            filter: drop-shadow(0 0 4px rgba(255, 77, 109, 0.6));
+            transform: scale(1.1);
+        }
+        .heart-pill.heartbeat {
+            animation: heartBeat 0.6s ease;
+        }
+
+        @keyframes heartPop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.2); }
+            50% { transform: scale(0.95); }
+            75% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
 
         @keyframes heartReact {
@@ -1357,6 +1399,33 @@
             90% { opacity: 0.8; }
             100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
         }
+
+        /* REACTION NOTIFICATION */
+        .reaction-notification {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--velvet-berry);
+            border: 1px solid rgba(255, 77, 109, 0.4);
+            color: white;
+            border-radius: 30px;
+            padding: 8px 18px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+            z-index: 10015;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            word-wrap: break-word;
+            max-width: 400px;
+        }
+        .reaction-notification.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -2256,26 +2325,6 @@
                     }
                 }
 
-            database.ref('rooms/' + roomID + '/savedVideoState').on('value', snap => {
-                const d = snap.val();
-                if (!d || !d.savedAt) {
-                    hasSavedVideoStateLoaded = true;
-                    return;
-                }
-
-                if (!hasSavedVideoStateLoaded) {
-                    hasSavedVideoStateLoaded = true;
-                    lastSavedVideoStateTime = d.savedAt;
-                    return;
-                }
-
-                if (d.savedAt === lastSavedVideoStateTime && d.savedBy === myName) return;
-
-                const savedTime = typeof d.timestamp === 'number' ? d.timestamp.toFixed(1) : '0.0';
-                const author = d.savedBy === myName ? 'You' : (d.savedBy || 'Your partner');
-                showSaveStateNotification(`💾 ${author} saved the movie at ${savedTime}s`);
-                lastSavedVideoStateTime = d.savedAt;
-            });
                 const isEmpty = !d.videoSrc || d.videoSrc === "";
                 const isMyLoad = (mySymbol === 'X' ? d.loadingX : d.loadingO);
                 const isLoading = (isPartnerOnline) ? (d.loadingX || d.loadingO) : isMyLoad;
@@ -2302,6 +2351,27 @@
                          }
                      }
                 }
+            });
+
+            database.ref('rooms/' + roomID + '/savedVideoState').on('value', snap => {
+                const d = snap.val();
+                if (!d || !d.savedAt) {
+                    hasSavedVideoStateLoaded = true;
+                    return;
+                }
+
+                if (!hasSavedVideoStateLoaded) {
+                    hasSavedVideoStateLoaded = true;
+                    lastSavedVideoStateTime = d.savedAt;
+                    return;
+                }
+
+                if (d.savedAt === lastSavedVideoStateTime) return;
+
+                const savedTime = typeof d.timestamp === 'number' ? d.timestamp.toFixed(1) : '0.0';
+                const author = d.savedBy === myName ? 'You' : (d.savedBy || 'Your partner');
+                showSaveStateNotification(`💾 ${author} saved the movie at ${savedTime}s`);
+                lastSavedVideoStateTime = d.savedAt;
             });
 
             database.ref('rooms/' + roomID + '/videoSrc').on('value', snap => { 
@@ -2561,8 +2631,12 @@
             if (!msgEl) return;
             const pill = msgEl.querySelector('.heart-pill');
             if (pill) {
+                const wasHearted = pill.classList.contains('hearted');
                 pill.classList.toggle('hearted', !!heartState);
-                if (heartState) {
+                if (heartState && !wasHearted) {
+                    pill.classList.add('heartbeat');
+                    setTimeout(() => pill.classList.remove('heartbeat'), 650);
+
                     // Add small floating hearts
                     const pillRect = pill.getBoundingClientRect();
                     const msgRect = msgEl.getBoundingClientRect();
@@ -2584,7 +2658,48 @@
                         msgEl.appendChild(smallHeart);
                         setTimeout(() => smallHeart.remove(), 1000);
                     }
+
+                    // Show reaction notification if this is my message (someone reacted to my message)
+                    const isMyMessage = msgEl.classList.contains('me');
+                    if (isMyMessage) {
+                        showReactionNotification(partnerName || "Partner", isMyMessage);
+                    }
+
+                    // Play reaction sound with higher volume
+                    // Always play when someone reacts to my message
+                    // Only play when I react to someone else's message if chat is not hidden
+                    if (isMyMessage || !isChatHidden) {
+                        playReactionSound();
+                    }
+                } else {
+                    pill.classList.remove('heartbeat');
                 }
+            }
+        }
+
+        function showReactionNotification(partnerName, isMyMessage) {
+            // Remove any existing notification
+            const existing = document.querySelector('.reaction-notification');
+            if (existing) existing.remove();
+
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = 'reaction-notification';
+            notification.textContent = `${partnerName} reacted to your message 💖`;
+
+            // Add to video container
+            const videoContainer = document.getElementById('video-container');
+            if (videoContainer) {
+                videoContainer.appendChild(notification);
+
+                // Show with animation
+                setTimeout(() => notification.classList.add('visible'), 10);
+
+                // Hide after 4 seconds
+                setTimeout(() => {
+                    notification.classList.remove('visible');
+                    setTimeout(() => notification.remove(), 300);
+                }, 4000);
             }
         }
 
@@ -2594,7 +2709,7 @@
             const div = document.createElement('div');
             div.dataset.messageId = key;
             const timeLabel = new Date(m.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-            const heartPill = `<span class="heart-pill${m.heart ? ' hearted' : ''}">❤️</span>`;
+            const heartPill = `<span class="heart-pill${m.heart ? ' hearted' : ''}">❤</span>`;
 
             if (m.type === 'memory') {
                 div.className = `msg memory-letter ${m.sender === myName ? 'me' : 'them'}`;
@@ -2620,6 +2735,7 @@
             if (!isOwnMessage) {
                 div.addEventListener('dblclick', (event) => {
                     if (event.target.closest('.heart-pill')) return;
+                    event.preventDefault(); // Prevent text selection
                     toggleHeart(key);
                 });
                 div.addEventListener('click', (event) => {
@@ -3326,6 +3442,12 @@
         }
         function startHearts() { spawnHeart(); heartInterval = setInterval(spawnHeart, 500); }
         function closeScrapbook() { document.getElementById('scrapbook-view').style.display = 'none'; clearInterval(heartInterval); document.getElementById('scrapbook-heart-container').innerHTML = ''; }
+
+        function playReactionSound() {
+            const audio = new Audio('chat-reaction.mp3');
+            audio.volume = 0.8; // Set volume to 80% (higher than default)
+            audio.play().catch(e => console.log('Reaction sound play failed:', e));
+        }
 
         function setupInputVisibility() {
             const input = document.getElementById('chatInput');
