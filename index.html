@@ -2203,20 +2203,23 @@
         }
 
         function startSession() {
-            const amOnline = database.ref('.info/connected');
             const userRef = database.ref('rooms/' + roomID + '/online/' + mySymbol);
-            
-            amOnline.on('value', (snap) => {
-                if (snap.val()) {
-                    userRef.onDisconnect().remove();
-                    userRef.set(true);
-                }
-            });
+            let presenceInterval = null;
 
-            // Ensure disconnect status is applied immediately rather than waiting for server timeout
-            window.addEventListener('beforeunload', () => {
+            const updatePresence = () => {
+                userRef.set({ lastSeen: Date.now() });
+            };
+
+            updatePresence();
+            presenceInterval = setInterval(updatePresence, 10000);
+
+            // Ensure disconnect status is applied immediately when the app is closed or refreshed
+            const removePresence = () => {
+                if (presenceInterval) clearInterval(presenceInterval);
                 if (userRef) userRef.remove();
-            });
+            };
+            window.addEventListener('beforeunload', removePresence);
+            window.addEventListener('pagehide', removePresence);
 
             // Pre-load existing data before starting full session
             Promise.all([
@@ -2353,7 +2356,11 @@
                 const d = snap.val(); if(!d) return;
                 
                 const partnerSymbol = (mySymbol === 'X' ? 'O' : 'X');
-                const isPartnerOnline = (d.online && d.online[partnerSymbol]);
+                const partnerOnlineData = d.online && d.online[partnerSymbol];
+                const isPartnerOnline = partnerOnlineData && (
+                    (typeof partnerOnlineData === 'object' && typeof partnerOnlineData.lastSeen === 'number' && (Date.now() - partnerOnlineData.lastSeen < 25000))
+                    || partnerOnlineData === true
+                );
                 
                 const rawName = (partnerSymbol === 'O' ? d.playerO : d.playerX);
                 const validName = (rawName && rawName !== "Waiting..." && rawName !== "undefined" && rawName !== null) ? rawName : null;
@@ -2516,9 +2523,18 @@
                 lastSavedVideoStateTime = d.savedAt;
             });
 
-            database.ref('rooms/' + roomID + '/videoSrc').on('value', snap => { 
-                if(snap.val()) { video.src = snap.val(); video.load(); } 
-                else { video.src = ""; subtitleData = []; } 
+            database.ref('rooms/' + roomID + '/videoSrc').on('value', snap => {
+                const newSrc = snap.val();
+                if (newSrc) {
+                    const currentSrc = video.currentSrc || video.src || "";
+                    if (currentSrc !== newSrc) {
+                        video.src = newSrc;
+                        video.load();
+                    }
+                } else {
+                    video.src = "";
+                    subtitleData = [];
+                }
             });
 
             database.ref('rooms/' + roomID).on('value', snap => { 
@@ -2594,17 +2610,34 @@
             });
 
             cinemaRef.on('value', snap => {
-                if(isDragging) return; 
+                if(isDragging) return;
                 const d = snap.val(); if(!d || d.user === mySymbol) return;
                 isRemoteChange = true;
+
+                const remoteTime = (typeof d.time === 'number' && isFinite(d.time)) ? d.time : 0;
+                const remoteState = d.state === 'play' ? 'play' : 'pause';
+                const currentTime = video.currentTime || 0;
+                const timeDiff = Math.abs(currentTime - remoteTime);
+
                 if(d.seekAction) triggerSeekVisual(d.seekAction);
-                if(Math.abs(video.currentTime - d.time) > 2) video.currentTime = d.time;
-                if(d.state === 'play') {
-                    video.play().catch(e => console.log("Auto-play blocked", e));
-                } else if(d.state === 'pause') {
-                    video.pause();
+
+                const shouldSeek = (remoteState === 'play' && timeDiff > 3) || (remoteState === 'pause' && timeDiff > 0.5);
+
+                if (shouldSeek) {
+                    try { video.currentTime = remoteTime; } catch (e) {}
                 }
-                setTimeout(() => { isRemoteChange = false; }, 100);
+
+                if (remoteState === 'play') {
+                    if (video.paused || shouldSeek) {
+                        video.play().catch(e => console.log("Auto-play blocked", e));
+                    }
+                } else {
+                    if (!video.paused || shouldSeek) {
+                        video.pause();
+                    }
+                }
+
+                setTimeout(() => { isRemoteChange = false; }, 250);
             });
             database.ref('rooms/' + roomID + '/react').on('value', snap => { const d = snap.val(); if(d && d.user !== myName) { showReaction(d.emoji, d.text, d.ani, d.user); database.ref('rooms/' + roomID + '/react').set(null); } });
         }
@@ -3071,6 +3104,16 @@
             document.getElementById('subtitle-ghost').innerHTML = "";
             isReadyAnimShown = false;
             clearTimeout(videoLoadingTimeout);
+
+            // Immediately update the local player so it doesn't wait on the DB round trip.
+            if ((video.currentSrc || video.src || "") !== validatedUrl) {
+                try {
+                    video.pause();
+                } catch (e) {}
+                video.src = validatedUrl;
+                video.load();
+            }
+
             database.ref('rooms/' + roomID).update({
                 videoSrc: validatedUrl,
                 subtitleSrc: "",
@@ -3079,6 +3122,13 @@
                 loadingX: true,
                 loadingO: true
             });
+            // Reset shared playback state for the new video to avoid stale sync conflicts
+            database.ref('rooms/' + roomID + '/cinema').update({
+                state: 'pause',
+                time: 0,
+                user: mySymbol,
+                seekAction: 'newVideo'
+            }).catch(() => {});
             // persist selected video immediately
             database.ref('rooms/' + roomID + '/lastPlayback').set({
                 videoSrc: validatedUrl,
