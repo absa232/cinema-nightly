@@ -18,6 +18,7 @@
             --chat-light-bg: #fff0f3;
             --memory-bubble-bg: #fff0f3;
             --gold-accent: #d4af37;
+            --text-light: #aaa;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -278,11 +279,11 @@
 
         #chat-header { height: 60px; display: flex; align-items: center; justify-content: center; background: white; font-family: 'Dancing Script'; font-size: 1.5rem; color: var(--heart-red); border-bottom: 1px solid #eee; flex-shrink: 0; }
         #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; min-height: 0; }
-        .msg { position: relative; font-family: 'Poppins', sans-serif; padding: 12px 15px 26px; border-radius: 18px; font-size: 0.85rem; max-width: 85%; min-width: 70px; overflow-wrap: break-word; line-height: 1.4; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .msg { position: relative; font-family: 'Poppins', sans-serif; padding: 12px 15px 12px; border-radius: 18px; font-size: 0.85rem; max-width: 85%; min-width: 70px; overflow-wrap: break-word; line-height: 1.4; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
         .msg.me { align-self: flex-end; background: var(--heart-red); color: white; border-bottom-right-radius: 2px; }
         .msg.them { align-self: flex-start; background: white; color: #444; border-bottom-left-radius: 2px; border: 1px solid #ffe1e6; }
 
-        .msg-time { position: absolute; right: 10px; bottom: 6px; font-size: 0.68rem; line-height: 1; opacity: 0.95; }
+        .msg-time { align-self: flex-end; font-size: 0.68rem; line-height: 1; opacity: 0.95; margin-top: 4px; }
         .msg.me .msg-time { color: #ffe1ec; text-shadow: 0 0 3px rgba(0,0,0,0.3); }
         .msg.them .msg-time { color: #888; }
 
@@ -290,8 +291,8 @@
 
         .msg .heart-pill {
             position: absolute;
-            bottom: -14px;
-            left: 8px;
+            bottom: -10px;
+            left: 10px;
             padding: 4px 8px;
             border-radius: 20px;
             display: none;
@@ -304,10 +305,14 @@
             user-select: none;
             pointer-events: auto;
             line-height: 1;
+            will-change: transform;
+            backface-visibility: hidden;
+            transform: translateZ(0);
         }
 
         .msg.me .heart-pill {
-            left: 8px;
+            left: 10px;
+            right: auto;
             background: white;
             color: var(--heart-red);
             border: 1.5px solid var(--heart-red);
@@ -323,7 +328,8 @@
         }
        
         .msg.them .heart-pill {
-            left: 8px;
+            left: 10px;
+            right: auto;
             background: var(--velvet-berry);
             color: var(--heart-red);
             border: 1.5px solid rgba(255, 77, 109, 0.4);
@@ -362,7 +368,7 @@
             transform: scale(1.1);
         }
         .heart-pill.heartbeat {
-            animation: heartBeat 0.6s ease;
+            animation: heartBeat 0.6s ease forwards;
         }
 
         @keyframes heartPop {
@@ -372,9 +378,9 @@
 
         @keyframes heartBeat {
             0% { transform: scale(1); }
-            25% { transform: scale(1.2); }
-            50% { transform: scale(0.95); }
-            75% { transform: scale(1.1); }
+            25% { transform: scale(1.15); }
+            50% { transform: scale(0.98); }
+            75% { transform: scale(1.08); }
             100% { transform: scale(1); }
         }
 
@@ -1426,6 +1432,142 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* FOLDER BOX */
+        .folder {
+            margin-bottom: 12px;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid #f0f0f0;
+            transition: 0.3s;
+            opacity: 0;
+            animation: romanticFadeInCard 0.4s ease forwards;
+        }
+
+        .episode-item,
+        .standalone-link {
+            opacity: 0;
+            animation: romanticFadeInCard 0.4s ease forwards;
+        }
+
+        .folder:has(.folder-header:hover) {
+            border-color: var(--heart-red);
+        }
+
+        .folder-header {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background: #fff;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .folder-header:hover {
+            background: var(--soft-pink);
+        }
+
+        .folder-icon {
+            font-size: 1.3rem;
+            margin-right: 15px;
+            /* Using the requested folder icon */
+        }
+
+        .folder,
+        .standalone-link,
+        .episode-item {
+            opacity: 0;
+            animation: romanticFadeInCard 0.4s ease forwards;
+        }
+
+        .folder-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            flex: 1;
+        }
+
+        .arrow-icon {
+            font-size: 0.7rem;
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-light);
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* EPISODE LIST (Accordion) */
+        .episode-list {
+            max-height: 0;
+            overflow: hidden;
+            background: #fafafa;
+            transition: max-height 0.4s ease-out;
+        }
+
+        .episode-item {
+            padding: 12px 20px 12px 50px;
+            font-size: 0.85rem;
+            color: #666;
+            cursor: pointer;
+            border-top: 1px solid #f5f5f5;
+            display: flex;
+            align-items: center;
+            transition: 0.2s;
+        }
+
+        .episode-item:hover {
+            color: var(--heart-red);
+            background: #fff;
+            padding-left: 55px;
+        }
+
+        .episode-item::before {
+            content: "•";
+            margin-right: 12px;
+            color: var(--heart-red);
+            font-weight: bold;
+        }
+
+        /* STANDALONE LINK (No underscore) */
+        .standalone-link {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background: #fff;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            border: 1px solid #f0f0f0;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            transition: 0.3s;
+        }
+
+        .standalone-link:hover {
+            border-color: var(--heart-red);
+            color: var(--heart-red);
+            background: var(--soft-pink);
+            transform: translateX(5px);
+        }
+
+        .link-icon {
+            margin-right: 15px;
+            font-size: 1.1rem;
+            opacity: 0.7;
+        }
+
+        /* OPEN FOLDER STATES */
+        .folder.open {
+            border-color: var(--heart-red);
+        }
+        .folder.open .episode-list {
+            max-height: 500px;
+        }
+        .folder.open .arrow-icon {
+            transform: rotate(90deg);
+            color: var(--text-light) !important;
+        }
+
+        .scanner-card::-webkit-scrollbar { width: 4px; }
+        .scanner-card::-webkit-scrollbar-thumb { background: var(--soft-pink); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -2834,7 +2976,7 @@
                 hideRomanticMovieOverlay();
                 return;
             }
-            showRomanticMovieOverlay();
+            showRomanticMovieOverlay(true); // Force reload when changing movie
         }
 
         // --- Romantic movie selection bridging logic ---
@@ -3126,7 +3268,7 @@
             });
         }
 
-        function showRomanticMovieOverlay() {
+        function showRomanticMovieOverlay(forceReload = false) {
             const modal = document.getElementById('romantic-movie-modal');
             if(!modal || romanticModalOpen) return;
 
@@ -3154,6 +3296,17 @@
             if (privateArea) privateArea.style.display = 'none';
             if (privateInput) privateInput.value = '';
             if (privatePlayBtn) privatePlayBtn.style.display = 'none';
+
+            // Check if we have cached movies and not forcing a reload
+            if (romanticAllMovies.length > 0 && !forceReload) {
+                // Show cached movies immediately
+                loadingSection.style.display = 'none';
+                searchWrapper.style.display = 'block';
+                movieList.style.display = 'block';
+                movieList.innerHTML = "";
+                renderRomanticMovies(romanticAllMovies);
+                return;
+            }
 
             statusEl.innerText = "Searching for our movies...";
             loadingSection.style.display = 'block';
@@ -3257,41 +3410,177 @@
                 return;
             }
 
-            list.forEach((m, i) => {
-                const card = document.createElement('div');
-                card.className = 'romantic-movie-card';
-                card.style.animationDelay = `${i * 0.05}s`;
+            const groupedFolders = {};
+            const standalones = [];
 
-                const url = `https://archive.org/download/${ROMANTIC_ITEM_ID}/${encodeURIComponent(m.name)}`;
-                card.dataset.videoUrl = url;
-
-                card.innerHTML = `
-                    <div class="romantic-movie-icon">🎞️</div>
-                    <div class="romantic-movie-title">${m.name}</div>
-                `;
-
-                card.addEventListener('click', () => {
-                    // Debounce clicks
-                    const now = Date.now();
-                    if (now - lastMovieSelectionTime < VIDEO_SELECTION_DEBOUNCE) return;
-                    lastMovieSelectionTime = now;
+            list.forEach(m => {
+                const cleanName = m.name.replace('.mp4', '');
+                
+                if (cleanName.includes('_')) {
+                    const [folderName, linkName] = cleanName.split('_');
                     
-                    const chosenUrl = card.dataset.videoUrl;
-                    if(chosenUrl) {
-                        database.ref('rooms/' + roomID).update({ modalOpen: false });
-                        setVideoSrcByUrl(chosenUrl);
-                    }
-                    hideRomanticMovieOverlay();
-                });
-
-                container.appendChild(card);
+                    if (!groupedFolders[folderName]) groupedFolders[folderName] = [];
+                    groupedFolders[folderName].push({ name: linkName, fullName: m.name });
+                } else {
+                    standalones.push(m);
+                }
             });
+
+            const searchTerm = (document.getElementById('movie-search')?.value || '').toLowerCase().trim();
+
+            // Generate alternative search terms for smart episode matching
+            const searchTerms = [searchTerm];
+            
+            // Check for episode patterns and add alternatives
+            const episodeMatch = searchTerm.match(/episode\s+(\d+)/i);
+            if (episodeMatch) {
+                const num = parseInt(episodeMatch[1]);
+                if (num >= 1 && num <= 9) {
+                    // For 1-9, also search for 01-09
+                    searchTerms.push(searchTerm.replace(/\bepisode\s+\d+/i, `episode 0${num}`));
+                }
+                // For 10+, don't add 0XX alternatives to avoid matching invalid numbers
+            }
+
+            // Render Folders
+            const folderNames = Object.keys(groupedFolders);
+            folderNames.forEach((folderName, folderIndex) => {
+                const folderNameKey = folderName.replace(/_/g, ' ').toLowerCase();
+                const episodeItems = groupedFolders[folderName];
+                const openOnSearch = searchTerm && (searchTerms.some(term => folderNameKey.includes(term)) || episodeItems.some(item => searchTerms.some(term => (`${folderNameKey} ${item.name.replace(/_/g, ' ').toLowerCase()}`).includes(term) || item.name.replace(/_/g, ' ').toLowerCase().includes(term))));
+
+                const folderDiv = document.createElement('div');
+                folderDiv.className = openOnSearch ? 'folder open' : 'folder';
+                folderDiv.style.animationDelay = `${folderIndex * 0.05}s`;
+                folderDiv.innerHTML = `
+                    <div class="folder-header" onclick="toggleFolder(this.parentElement)">
+                        <span class="folder-icon">📂</span>
+                        <span class="folder-name">${folderName}</span>
+                        <span class="arrow-icon">▶</span>
+                    </div>
+                    <div class="episode-list">
+                        ${episodeItems.map((item, epIndex) => `
+                            <div class="episode-item" style="animation-delay: ${(folderIndex * 0.05) + ((epIndex + 1) * 0.03)}s" onclick="playRomanticMovie('${item.fullName.replace(/'/g, "\\'")}')">
+                                ${item.name}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(folderDiv);
+            });
+
+            // Render Standalones
+            standalones.forEach((m, i) => {
+                const movieDiv = document.createElement('div');
+                movieDiv.className = 'standalone-link';
+                movieDiv.style.animationDelay = `${(folderNames.length + i) * 0.05}s`;
+                movieDiv.onclick = () => playRomanticMovie(m.name);
+                movieDiv.innerHTML = `
+                    <span class="link-icon">🎞️</span>
+                    <span class="folder-name">${m.name.replace('.mp4', '')}</span>
+                `;
+                container.appendChild(movieDiv);
+            });
+        }
+
+        function playRomanticMovie(movieName) {
+            const now = Date.now();
+            if (now - lastMovieSelectionTime < VIDEO_SELECTION_DEBOUNCE) return;
+            lastMovieSelectionTime = now;
+            
+            const url = `https://archive.org/download/${ROMANTIC_ITEM_ID}/${encodeURIComponent(movieName)}`;
+            database.ref('rooms/' + roomID).update({ modalOpen: false });
+            setVideoSrcByUrl(url);
+            hideRomanticMovieOverlay();
+        }
+
+        function toggleFolder(element) {
+            document.querySelectorAll('.folder').forEach(f => {
+                if (f !== element) f.classList.remove('open');
+            });
+            element.classList.toggle('open');
         }
 
         function filterRomanticMovies() {
             const q = (document.getElementById('movie-search').value || '').toLowerCase();
-            const filtered = romanticAllMovies.filter(m => m.name.toLowerCase().includes(q));
-            renderRomanticMovies(filtered);
+            
+            // If search is empty, show all movies
+            if (!q.trim()) {
+                renderRomanticMovies(romanticAllMovies);
+                return;
+            }
+
+            // Generate alternative search terms for smart episode matching
+            const searchTerms = [q];
+            
+            // Check for episode patterns and add alternatives
+            const episodeMatch = q.match(/episode\s+(\d+)/i);
+            if (episodeMatch) {
+                const num = parseInt(episodeMatch[1]);
+                if (num >= 1 && num <= 9) {
+                    // For 1-9, also search for 01-09
+                    searchTerms.push(q.replace(/\bepisode\s+\d+/i, `episode 0${num}`));
+                }
+                // For 10+, don't add 0XX alternatives to avoid matching invalid numbers
+            }
+
+            // Group all movies into folders and standalones
+            const groupedFolders = {};
+            const standalones = [];
+
+            romanticAllMovies.forEach(m => {
+                const cleanName = m.name.replace('.mp4', '');
+                
+                if (cleanName.includes('_')) {
+                    const [folderName, linkName] = cleanName.split('_');
+                    
+                    if (!groupedFolders[folderName]) {
+                        groupedFolders[folderName] = [];
+                    }
+                    groupedFolders[folderName].push({ name: linkName, fullName: m.name });
+                } else {
+                    standalones.push(m);
+                }
+            });
+
+            const filteredMovies = [];
+
+            // Search in folders
+            for (const folderName in groupedFolders) {
+                const cleanFolderName = folderName.replace(/_/g, ' ');
+                const folderMatches = searchTerms.some(term => cleanFolderName.toLowerCase().includes(term));
+
+                if (folderMatches) {
+                    // Folder name matches: include all episodes
+                    groupedFolders[folderName].forEach(episode => {
+                        filteredMovies.push({ name: `${folderName}_${episode.name}.mp4` });
+                    });
+                } else {
+                    // Check if any episodes match (including combined folder+episode search)
+                    const matchingEpisodes = groupedFolders[folderName].filter(episode => {
+                        const cleanEpisodeName = episode.name.replace(/_/g, ' ');
+                        const cleanCombined = `${cleanFolderName} ${cleanEpisodeName}`;
+                        return searchTerms.some(term => cleanEpisodeName.toLowerCase().includes(term) || cleanCombined.toLowerCase().includes(term));
+                    });
+
+                    // If episodes match, include only those episodes
+                    if (matchingEpisodes.length > 0) {
+                        matchingEpisodes.forEach(episode => {
+                            filteredMovies.push({ name: `${folderName}_${episode.name}.mp4` });
+                        });
+                    }
+                }
+            }
+
+            // Search in standalones
+            standalones.forEach(m => {
+                const cleanMovieName = m.name.replace('.mp4', '').replace(/_/g, ' ');
+                if (searchTerms.some(term => cleanMovieName.toLowerCase().includes(term))) {
+                    filteredMovies.push(m);
+                }
+            });
+
+            renderRomanticMovies(filteredMovies);
         }
 
         function playPrivateLinkMovie(url) {
@@ -3445,7 +3734,7 @@
 
         function playReactionSound() {
             const audio = new Audio('chat-reaction.mp3');
-            audio.volume = 0.8; // Set volume to 80% (higher than default)
+            audio.volume = 0.32; // Match volume with other sounds
             audio.play().catch(e => console.log('Reaction sound play failed:', e));
         }
 
