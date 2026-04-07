@@ -2526,11 +2526,7 @@
             database.ref('rooms/' + roomID + '/videoSrc').on('value', snap => {
                 const newSrc = snap.val();
                 if (newSrc) {
-                    const currentSrc = video.currentSrc || video.src || "";
-                    if (currentSrc !== newSrc) {
-                        video.src = newSrc;
-                        video.load();
-                    }
+                    setVideoSrcByUrl(newSrc, true);
                 } else {
                     video.src = "";
                     subtitleData = [];
@@ -3122,7 +3118,7 @@
             return cleaned;
         }
 
-        function setVideoSrcByUrl(url) {
+        function setVideoSrcByUrl(url, isRemote = false) {
             const validatedUrl = getValidatedVideoUrl(url);
             if (!validatedUrl) {
                 console.warn('Invalid video URL passed:', url);
@@ -3151,21 +3147,23 @@
                 loadingX: true,
                 loadingO: true
             });
-            // Reset shared playback state for the new video to avoid stale sync conflicts
-            database.ref('rooms/' + roomID + '/cinema').update({
-                state: 'pause',
-                time: 0,
-                user: mySymbol,
-                seekAction: 'newVideo'
-            }).catch(() => {});
-            // persist selected video immediately
-            database.ref('rooms/' + roomID + '/lastPlayback').set({
-                videoSrc: validatedUrl,
-                time: 0,
-                state: 'pause',
-                updatedAt: Date.now(),
-                savedBy: myName || ""
-            }).catch(() => {});
+            // Reset shared playback state for the new video to avoid stale sync conflicts - only if local action
+            if (!isRemote) {
+                database.ref('rooms/' + roomID + '/cinema').update({
+                    state: 'pause',
+                    time: 0,
+                    user: mySymbol,
+                    seekAction: 'newVideo'
+                }).catch(() => {});
+                // persist selected video immediately
+                database.ref('rooms/' + roomID + '/lastPlayback').set({
+                    videoSrc: validatedUrl,
+                    time: 0,
+                    state: 'pause',
+                    updatedAt: Date.now(),
+                    savedBy: myName || ""
+                }).catch(() => {});
+            }
             
             // Set timeout to force hide loader if video doesn't load within time limit
             clearTimeout(videoLoadingTimeout);
