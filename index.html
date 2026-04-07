@@ -2621,15 +2621,44 @@
 
                 if(d.seekAction) triggerSeekVisual(d.seekAction);
 
-                const shouldSeek = (remoteState === 'play' && timeDiff > 3) || (remoteState === 'pause' && timeDiff > 0.5);
+                const isSeek = !!d.seekAction;
+                const shouldSeek = isSeek || (remoteState === 'play' && timeDiff > 3) || (remoteState === 'pause' && timeDiff > 0.5);
 
                 if (shouldSeek) {
-                    try { video.currentTime = remoteTime; } catch (e) {}
+                    const applyRemoteTime = () => {
+                        try { video.currentTime = remoteTime; } catch (e) {}
+                        if (!isNaN(video.duration) && video.duration > 0) {
+                            pBar.style.width = (remoteTime / video.duration) * 100 + "%";
+                        }
+                        document.getElementById('curTime').innerText = formatTime(remoteTime);
+                    };
+
+                    if (video.readyState >= 2) {
+                        applyRemoteTime();
+                    } else {
+                        const onCanPlaySeek = () => {
+                            video.removeEventListener('canplay', onCanPlaySeek);
+                            applyRemoteTime();
+                        };
+                        video.addEventListener('canplay', onCanPlaySeek);
+                    }
                 }
 
                 if (remoteState === 'play') {
-                    if (video.paused || shouldSeek) {
-                        video.play().catch(e => console.log("Auto-play blocked", e));
+                    const maybePlay = () => {
+                        if (video.paused || shouldSeek) {
+                            video.play().catch(e => console.log("Auto-play blocked", e));
+                        }
+                    };
+
+                    if (video.readyState >= 2) {
+                        maybePlay();
+                    } else {
+                        const onCanPlay = () => {
+                            video.removeEventListener('canplay', onCanPlay);
+                            maybePlay();
+                        };
+                        video.addEventListener('canplay', onCanPlay);
                     }
                 } else {
                     if (!video.paused || shouldSeek) {
@@ -2657,7 +2686,7 @@
         }
         function togglePlay() { if(video.paused) video.play(); else video.pause(); showPlaybackRipple(); }
         function seekManual(sec) { let newTime = video.currentTime + sec; if (newTime < 0) newTime = 0; if (newTime > video.duration) newTime = video.duration; video.currentTime = newTime; const act = sec > 0 ? 'right' : 'left'; triggerSeekVisual(act); database.ref('rooms/' + roomID + '/cinema').update({ state: video.paused ? 'pause' : 'play', time: video.currentTime, user: mySymbol, seekAction: act, seekNonce: Math.random() }); }
-        function triggerSeekVisual(dir) { const el = document.getElementById('seek-' + dir); el.classList.remove('seek-animate'); void el.offsetWidth; el.classList.add('seek-animate'); }
+        function triggerSeekVisual(dir) { const el = document.getElementById('seek-' + dir); if (!el) return; el.classList.remove('seek-animate'); void el.offsetWidth; el.classList.add('seek-animate'); }
 
         const progArea = document.getElementById('progArea');
         progArea.addEventListener('mousedown', (e) => { isDragging = true; updateDragUI(e); });
@@ -2669,7 +2698,7 @@
                 const pos = Math.min(Math.max(0, e.clientX - rect.left), rect.width);
                 const percent = pos / rect.width;
                 video.currentTime = percent * video.duration;
-                database.ref('rooms/' + roomID + '/cinema').update({ state: video.paused ? 'pause' : 'play', time: video.currentTime, user: mySymbol });
+                database.ref('rooms/' + roomID + '/cinema').update({ state: video.paused ? 'pause' : 'play', time: video.currentTime, user: mySymbol, seekAction: 'progress', seekNonce: Math.random() });
             }
         });
         
@@ -2741,7 +2770,7 @@
             if(!isDragging) { 
                 const area = document.querySelector('.progress-area'), rect = area.getBoundingClientRect(); 
                 video.currentTime = ((e.clientX - rect.left) / rect.width) * video.duration; 
-                database.ref('rooms/' + roomID + '/cinema').update({ state: video.paused ? 'pause' : 'play', time: video.currentTime, user: mySymbol }); 
+                database.ref('rooms/' + roomID + '/cinema').update({ state: video.paused ? 'pause' : 'play', time: video.currentTime, user: mySymbol, seekAction: 'progress', seekNonce: Math.random() }); 
             } 
         }
         
