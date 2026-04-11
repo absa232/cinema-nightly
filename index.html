@@ -2206,15 +2206,26 @@
         function startSession() {
             const userRef = database.ref('rooms/' + roomID + '/online/' + mySymbol);
             let presenceInterval = null;
+            let isTabHidden = false;
 
             const updatePresence = () => {
-                userRef.set({ lastSeen: Date.now() });
+                // Include idle status in presence data
+                userRef.set({
+                    lastSeen: Date.now(),
+                    idle: isTabHidden
+                });
             };
 
             updatePresence();
             presenceInterval = setInterval(updatePresence, 10000);
 
-            // Ensure disconnect status is applied immediately when the app is closed or refreshed
+            // Track tab visibility to distinguish idle from disconnect
+            document.addEventListener('visibilitychange', () => {
+                isTabHidden = document.hidden;
+                updatePresence(); // Update presence immediately when visibility changes
+            });
+
+            // Only remove presence on actual page close/refresh/network disconnect
             const removePresence = () => {
                 if (presenceInterval) clearInterval(presenceInterval);
                 if (userRef) userRef.remove();
@@ -2358,20 +2369,22 @@
                 
                 const partnerSymbol = (mySymbol === 'X' ? 'O' : 'X');
                 const partnerOnlineData = d.online && d.online[partnerSymbol];
-                const isPartnerOnline = partnerOnlineData && (
-                    (typeof partnerOnlineData === 'object' && typeof partnerOnlineData.lastSeen === 'number' && (Date.now() - partnerOnlineData.lastSeen < 25000))
-                    || partnerOnlineData === true
-                );
+                // User is online if presence data exists (idle or active)
+                const isPartnerOnline = !!partnerOnlineData;
                 
                 const rawName = (partnerSymbol === 'O' ? d.playerO : d.playerX);
                 const validName = (rawName && rawName !== "Waiting..." && rawName !== "undefined" && rawName !== null) ? rawName : null;
                 partnerName = validName || "Partner";
                 
                 const statusEl = document.getElementById('status-text');
-                if(isPartnerOnline && validName) {
-                    statusEl.innerText = `${partnerName} is Watching with you ❤️`;
-                } else {
-                    statusEl.innerText = "Waiting for connection... ✨";
+                if (statusEl) { // Make sure element exists
+                    if(isPartnerOnline && validName) {
+                        statusEl.innerText = `${partnerName} is Watching with you ❤️`;
+                        console.log('Status updated to watching with', partnerName);
+                    } else {
+                        statusEl.innerText = "Waiting for connection... ✨";
+                        console.log('Status updated to waiting');
+                    }
                 }
 
                 // Only proceed with notifications if we have a valid partner name
@@ -2416,54 +2429,79 @@
                         }, 5000);
                     }
                     
-                    const alertBox = document.getElementById('presence-alert');
-                    let showNotif = false;
-                    let msg = "";
-                    let showSecondNotif = false;
-                    let secondMsg = "";
-
-                    function showPresenceNotification(msgText, soundFile) {
-                        const alertBox = document.getElementById('presence-alert');
-                        alertBox.innerText = msgText;
-                        alertBox.classList.add('show');
-                        setTimeout(() => alertBox.classList.remove('show'), 5000);
-
-                        if (isChatHidden || document.fullscreenElement) {
-                            const fsInd = document.getElementById('fs-typing-indicator');
-                            fsInd.innerHTML = `🔔 ${msgText}`;
-                            fsInd.classList.add('visible');
-                            setTimeout(() => fsInd.classList.remove('visible'), 5000);
-                        }
-
-                        if (soundFile) playSound(soundFile);
-                    }
-
-                    if (isPartnerOnline) {
-                        if (!globalLastOnlineState && !globalIsFirstLoad) {
-                            // Partner just came online (not on first load)
+                    // Show join notification only when presence data first appears (actual join)
+                    const wasPartnerPresent = globalLastOnlineState;
+                    if (isPartnerOnline && !wasPartnerPresent && !globalIsFirstLoad) {
+                        console.log('Join notification triggered for', validName, 'presence data appeared');
+                        const now = Date.now();
+                        if (now - lastNotificationTime > NOTIFICATION_DEBOUNCE) {
+                            lastNotificationTime = now;
+                            const alertBox = document.getElementById('presence-alert');
+                            let msg = "";
+                            
                             if (mySymbol === 'X') {
                                 msg = `${validName} joined the room... 💖`;
                             } else {
                                 msg = `Our screen, our story... welcome home, ${myName}. 💖`;
                             }
-                            if (mySymbol === 'O') {
-                                showSecondNotif = true;
-                                secondMsg = `${validName} is already here... 💖`;
+                            
+                            alertBox.innerText = msg;
+                            alertBox.classList.add('show');
+                            setTimeout(() => alertBox.classList.remove('show'), 5000);
+                            
+                            playSound('user-joined.mp3');
+                            
+                            if(isChatHidden || document.fullscreenElement) {
+                                const fsInd = document.getElementById('fs-typing-indicator');
+                                fsInd.innerHTML = `🔔 ${msg}`;
+                                fsInd.classList.add('visible');
+                                setTimeout(() => fsInd.classList.remove('visible'), 5000);
                             }
-
-                            showPresenceNotification(msg, 'user-joined.mp3');
-
-                            if (showSecondNotif) {
-                                const capturedSecondMsg = secondMsg;
+                            
+                            // For second user joining, show additional notification
+                            if (mySymbol === 'O') {
                                 setTimeout(() => {
-                                    showPresenceNotification(capturedSecondMsg, 'user-joined.mp3');
+                                    const secondMsg = `${validName} is already here... 💖`;
+                                    alertBox.innerText = secondMsg;
+                                    alertBox.classList.remove('show');
+                                    void alertBox.offsetWidth; // Trigger reflow
+                                    alertBox.classList.add('show');
+                                    setTimeout(() => alertBox.classList.remove('show'), 5000);
+                                    
+                                    playSound('user-joined.mp3');
+                                    
+                                    if(isChatHidden || document.fullscreenElement) {
+                                        const fsInd = document.getElementById('fs-typing-indicator');
+                                        fsInd.innerHTML = `🔔 ${secondMsg}`;
+                                        fsInd.classList.add('visible');
+                                        setTimeout(() => fsInd.classList.remove('visible'), 5000);
+                                    }
                                 }, 5000);
                             }
                         }
-                    } else {
-                        if (globalLastOnlineState === true && !globalIsFirstLoad) {
-                            msg = `The room feels empty without you, ${partnerName}... come back soon. 🥀`;
-                            showPresenceNotification(msg, 'user-disconnected.mp3');
+                    }
+                    
+                    // Show disconnection notification only when presence data completely disappears
+                    if (!isPartnerOnline && globalLastOnlineState && !globalIsFirstLoad) {
+                        console.log('Disconnect notification triggered for', partnerName, 'presence data disappeared');
+                        const now = Date.now();
+                        if (now - lastNotificationTime > NOTIFICATION_DEBOUNCE) {
+                            lastNotificationTime = now;
+                            const alertBox = document.getElementById('presence-alert');
+                            const msg = `${partnerName} left the room... come back soon. 🥀`;
+                            
+                            alertBox.innerText = msg;
+                            alertBox.classList.add('show');
+                            setTimeout(() => alertBox.classList.remove('show'), 5000);
+                            
+                            playSound('user-disconnected.mp3');
+                            
+                            if(isChatHidden || document.fullscreenElement) {
+                                const fsInd = document.getElementById('fs-typing-indicator');
+                                fsInd.innerHTML = `🔔 ${msg}`;
+                                fsInd.classList.add('visible');
+                                setTimeout(() => fsInd.classList.remove('visible'), 5000);
+                            }
                         }
                     }
 
