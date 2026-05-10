@@ -3186,7 +3186,7 @@
                 if (document.fullscreenElement || isChatHidden) {
                     spawnPetals();
                     const popup = document.getElementById('fs-message-popup');
-                    popup.innerHTML = `💌 <b>${m.sender}:</b> ${m.type === 'memory' ? 'Shared a memory' : m.text}`;
+                    popup.innerHTML = `💌 <b>${m.sender}:</b> ${m.type === 'memory' ? 'Shared a memory' : m.type === 'movie-selection' ? `Picked a movie: ${m.movieName}` : m.text}`;
                     popup.classList.add('visible');
                     setTimeout(() => popup.classList.remove('visible'), 5000);
                 }
@@ -3194,7 +3194,7 @@
         }
 
         function listenForChat() {
-            const listenerStartTime = Date.now();
+            const listenerStartTime = initialChatLoadTime;
             database.ref('rooms/'+roomID+'/messages').on('child_added', snap => {
                 const m = snap.val();
                 if (!m || m.time < listenerStartTime) return;
