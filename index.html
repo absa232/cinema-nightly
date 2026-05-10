@@ -2256,8 +2256,14 @@
             if(btn) btn.disabled = show;
         }
 
+        function normalizeRoomID(id) {
+            if (!id || typeof id !== 'string') return "";
+            return id.trim().toLowerCase().replace(/[.#$[\]]/g, '_');
+        }
+
         function joinRoom() { 
-            roomID = document.getElementById("roomInput").value; 
+            const rawRoomID = document.getElementById("roomInput").value;
+            roomID = normalizeRoomID(rawRoomID);
             myName = document.getElementById("nameInput").value; 
             if (!roomID || !myName) return alert("Fill everything!"); 
 
@@ -2333,8 +2339,7 @@
                 } else {
                     if(d['player' + mySymbol] !== myName) database.ref('rooms/' + roomID).update({ ['player' + mySymbol]: myName });
                     if(d.modalOpen === undefined) database.ref('rooms/' + roomID).update({ modalOpen: true });
-                    // Clear video source to ensure empty state when entering room
-                    database.ref('rooms/' + roomID).update({ videoSrc: "" });
+                    // Keep the existing video source intact for room members
                 }
 
                 const partnerSymbol = (mySymbol === 'X' ? 'O' : 'X');
@@ -2632,16 +2637,21 @@
 
             database.ref('rooms/' + roomID + '/videoSrc').on('value', snap => {
                 const newSrc = snap.val();
+                const currentSrc = (video.currentSrc || video.src || "");
                 if (newSrc) {
-                    setVideoSrcByUrl(newSrc, true);
+                    if (currentSrc !== newSrc) {
+                        setVideoSrcByUrl(newSrc, true);
+                    }
                 } else {
-                    video.src = "";
-                    subtitleData = [];
-                    currentSubtitleMode = 'none';
-                    document.getElementById('subtitle-ghost').innerHTML = "";
-                    const ghostElement = document.getElementById('subtitle-ghost');
-                    if (ghostElement) {
-                        ghostElement.style.display = 'none';
+                    if (currentSrc) {
+                        video.src = "";
+                        subtitleData = [];
+                        currentSubtitleMode = 'none';
+                        document.getElementById('subtitle-ghost').innerHTML = "";
+                        const ghostElement = document.getElementById('subtitle-ghost');
+                        if (ghostElement) {
+                            ghostElement.style.display = 'none';
+                        }
                     }
                 }
             });
@@ -3396,14 +3406,16 @@
                 }
             });
 
-            database.ref('rooms/' + roomID).update({
-                videoSrc: validatedUrl,
-                subtitleSrc: "",
-                subtitleContent: "",
-                subtitleMode: "ghost",
-                loadingX: true,
-                loadingO: true
-            });
+            if (!isRemote) {
+                database.ref('rooms/' + roomID).update({
+                    videoSrc: validatedUrl,
+                    subtitleSrc: "",
+                    subtitleContent: "",
+                    subtitleMode: "ghost",
+                    loadingX: true,
+                    loadingO: true
+                });
+            }
             const subtitleUrl = validatedUrl.replace(/\.mp4$/i, '.vtt');
             
             // Wait for video to actually start loading before injecting subtitles
