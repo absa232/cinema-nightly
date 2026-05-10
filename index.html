@@ -283,7 +283,72 @@
         .msg.me { align-self: flex-end; background: var(--heart-red); color: white; border-bottom-right-radius: 2px; }
         .msg.them { align-self: flex-start; background: white; color: #444; border-bottom-left-radius: 2px; border: 1px solid #ffe1e6; }
 
-        .msg-time { align-self: flex-end; font-size: 0.68rem; line-height: 1; opacity: 0.95; margin-top: 4px; }
+        .msg.movie-selection {
+            align-self: center;
+            width: 95%;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+            box-shadow: none;
+            border: none;
+        }
+
+        .msg.movie-selection .notif-whisper-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+            animation: fadeIn 1s ease-out;
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
+        }
+
+        .msg.movie-selection .whisper-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .msg.movie-selection .whisper-top-row::before,
+        .msg.movie-selection .whisper-top-row::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to var(--direction, right), var(--primary-pink), transparent);
+        }
+        .msg.movie-selection .whisper-top-row::before { --direction: left; }
+
+        .msg.movie-selection .whisper-top-row span {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.2rem;
+            color: var(--velvet-berry);
+            white-space: nowrap;
+            opacity: 0.7;
+            letter-spacing: 0.5px;
+        }
+
+        .msg.movie-selection .notif-movie-name {
+            margin-top: 2px;
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.2rem;
+            color: var(--heart-red);
+            text-align: center;
+            line-height: 1.2;
+            text-shadow: 0 0 10px rgba(255, 77, 109, 0.5), 0 0 20px rgba(255, 77, 109, 0.2);
+            word-break: break-word;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-time { align-self: flex-end; font-size: 0.68rem; line-height: 1; opacity: 0.95; margin-top: 6px; }
         .msg.me .msg-time { color: #ffe1ec; text-shadow: 0 0 3px rgba(0,0,0,0.3); }
         .msg.them .msg-time { color: #888; }
 
@@ -487,8 +552,10 @@
         
         video#main-video { width: 100%; height: 100%; object-fit: contain; }
 
-        #subtitle-ghost { position: absolute; bottom: 12%; left: 5%; right: 5%; text-align: center; pointer-events: none; z-index: 2147483647; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-height: 50px; }
-        #subtitle-ghost span { background: rgba(0, 0, 0, 0.7); color: #fff; font-family: 'Poppins', sans-serif; font-size: clamp(14px, 2.2vw, 24px); padding: 6px 14px; border-radius: 6px; line-height: 1.4; text-shadow: 1px 1px 3px black; white-space: pre-wrap; }
+        #subtitle-ghost { position: absolute; bottom: 5%; left: 5%; right: 5%; text-align: center; pointer-events: none; z-index: 2147483647; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-height: 50px; transition: bottom 0.35s ease, opacity 0.35s ease, transform 0.35s ease; opacity: 1; transform: translateY(0); }
+        #video-container.show-controls #subtitle-ghost { bottom: 18%; transform: translateY(-12px); }
+        #subtitle-ghost span { background: rgba(0, 0, 0, 0.75); color: #fff; font-family: 'Poppins', sans-serif; font-size: clamp(14px, 1.8vw, 20px); padding: 10px 16px; border-radius: 20px; line-height: 1.55; text-shadow: 1px 1px 6px rgba(0,0,0,0.8); white-space: pre-wrap; max-width: 90%; box-shadow: 0 18px 48px rgba(0,0,0,0.35); display: inline-flex; justify-content: center; margin: 0 12px; box-sizing: border-box; }
+        video::cue { font-family: 'Poppins', sans-serif; background: rgba(0, 0, 0, 0.88); color: #fff; padding: 16px 22px; border-radius: 20px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); line-height: 1.45; font-size: clamp(14px, 2.2vw, 24px); }
 
         /* FULLSCREEN TYPING INDICATOR */
         #fs-typing-indicator {
@@ -649,7 +716,7 @@
         .petal { position: absolute; border-radius: 150% 0 150% 0; width: 15px; height: 15px; pointer-events: none; z-index: 10002; animation: petalFall linear forwards; }
         @keyframes petalFall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
 
-        .reaction-bar { min-height: 70px; background: var(--velvet-berry); border-radius: 40px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 6px; border: 2px solid white; flex-wrap: nowrap; padding: 5px 12px; flex-shrink: 0; z-index: 100; font-family: 'Poppins', 'Noto Color Emoji', sans-serif; }
+        .reaction-bar { min-height: 70px; background: var(--velvet-berry); border-radius: 40px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 6px; border: 2px solid rgba(255, 77, 109, 0.4); flex-wrap: nowrap; padding: 5px 12px; flex-shrink: 0; z-index: 100; font-family: 'Poppins', 'Noto Color Emoji', sans-serif; }
         .react-btn { font-size: 1.4rem; cursor: pointer; transition: 0.2s; user-select: none; font-family: 'Noto Color Emoji', sans-serif; }
         .react-btn:hover { transform: scale(1.3); }
         .special-btn { width: auto; background: white; color: var(--heart-red); padding: 7px 15px; font-size: 0.7rem; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; transition: 0.3s; font-family: 'Poppins', 'Noto Color Emoji', sans-serif; white-space: nowrap; }
@@ -1872,20 +1939,43 @@
         }
 
         let attempts = 0, isLocked = false, isAuthenticated = false;
-        let roomID, mySymbol, myName, partnerName = "My Love", isRemoteChange = false;
+        let roomID, mySymbol, myName, partnerName = "Partner", isRemoteChange = false;
         const video = document.getElementById('main-video'), pBar = document.getElementById('pBar'), playBtn = document.getElementById('playBtn'), fsBtn = document.getElementById('fsBtn'), loader = document.getElementById('video-loader');
+        const SUBTITLE_PROXY = "https://subtitle-proxy-two.vercel.app/api/proxy?url=";
         
         let subtitleData = [];
+        let currentSubtitleMode = 'none'; // Track current subtitle mode: 'none', 'ghost', 'track'
+        let currentSubtitleUrl = null; // Valid .vtt subtitle link for the current movie
         let isDragging = false; 
         let isReadyAnimShown = false; 
         let isChatHidden = false;
+
+        function parseVttTextToSubtitleData(text) {
+            subtitleData = [];
+            if (!text) return;
+            const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const blocks = normalized.split(/\n\s*\n/);
+            blocks.forEach(block => {
+                const lines = block.split('\n').map(line => line.trim()).filter(Boolean);
+                let timeLineIndex = lines.findIndex(line => line.includes('-->'));
+                if (timeLineIndex === -1) return;
+                const timeLine = lines[timeLineIndex];
+                const [startText, endText] = timeLine.split('-->').map(t => t.trim());
+                const start = parseTime(startText);
+                const end = parseTime(endText || '0');
+                if (!isFinite(start) || !isFinite(end) || end <= start) return;
+                const textLines = lines.slice(timeLineIndex + 1);
+                if (textLines.length === 0) return;
+                subtitleData.push({ start, end, text: textLines.join('<br>') });
+            });
+        }
         let controlsTimeout;
         let lastPersistSave = 0;
         let initialChatLoadTime = Date.now();
         let videoLoadingTimeout = null;
         let lastMovieSelectionTime = 0;
         const VIDEO_SELECTION_DEBOUNCE = 500; // Prevent rapid clicks
-        const VIDEO_LOAD_TIMEOUT = 15000; // 15 seconds max wait for video to load
+        const VIDEO_LOAD_TIMEOUT = 60000; // 60 seconds max wait for video to load (archive.org needs time to handshake)
 
         let passwordAttempts = 0;
         let passwordLockedUntil = 0;
@@ -2209,6 +2299,7 @@
             let isTabHidden = false;
 
             const updatePresence = () => {
+                isLocalIdle = isTabHidden;
                 // Include idle status in presence data
                 userRef.set({
                     lastSeen: Date.now(),
@@ -2222,6 +2313,7 @@
             // Track tab visibility to distinguish idle from disconnect
             document.addEventListener('visibilitychange', () => {
                 isTabHidden = document.hidden;
+                isLocalIdle = isTabHidden;
                 updatePresence(); // Update presence immediately when visibility changes
             });
 
@@ -2234,37 +2326,53 @@
             window.addEventListener('pagehide', removePresence);
 
             // Pre-load existing data before starting full session
-            Promise.all([
-                // Load room data (player names)
-                database.ref('rooms/' + roomID).once('value').then(snap => {
-                    const d = snap.val();
-                    if(!d) database.ref('rooms/' + roomID).update({ playerX: myName, playerO: "Waiting...", loadingX: false, loadingO: false, videoSrc: "", subtitleSrc: "", modalOpen: true }); 
-                    else if(d['player' + mySymbol] !== myName) database.ref('rooms/' + roomID).update({ ['player' + mySymbol]: myName }); 
-                    if(d && d.modalOpen === undefined) database.ref('rooms/' + roomID).update({ modalOpen: true });
-                }),
-                // Load existing chat messages
-                database.ref('rooms/'+roomID+'/messages').once('value').then(snap => {
-                    const messages = [];
-                    snap.forEach(child => {
-                        messages.push({ key: child.key, data: child.val() });
-                    });
-                    messages.sort((a, b) => (a.data.time || 0) - (b.data.time || 0));
-                    messages.forEach(({ key, data }) => {
-                        renderChatMessage(data, key);
-                    });
-                    document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
-                }),
-                // Load shared memory data
-                database.ref('rooms/'+roomID+'/memories').once('value').then(snap => {
-                    const memories = snap.val();
-                    if (memories) {
-                        // Store memories in a global variable for access throughout the session
-                        window.loadedMemories = memories;
-                    } else {
-                        window.loadedMemories = {};
-                    }
-                })
-            ]).then(() => {
+            database.ref('rooms/' + roomID).once('value').then(snap => {
+                const d = snap.val();
+                if(!d) {
+                    database.ref('rooms/' + roomID).update({ playerX: myName, playerO: "Waiting...", loadingX: false, loadingO: false, videoSrc: "", subtitleSrc: "", modalOpen: true });
+                } else {
+                    if(d['player' + mySymbol] !== myName) database.ref('rooms/' + roomID).update({ ['player' + mySymbol]: myName });
+                    if(d.modalOpen === undefined) database.ref('rooms/' + roomID).update({ modalOpen: true });
+                    // Clear video source to ensure empty state when entering room
+                    database.ref('rooms/' + roomID).update({ videoSrc: "" });
+                }
+
+                const partnerSymbol = (mySymbol === 'X' ? 'O' : 'X');
+                const rawName = d ? (partnerSymbol === 'O' ? d.playerO : d.playerX) : null;
+                partnerName = (rawName && rawName !== "Waiting..." && rawName !== "undefined" && rawName !== null) ? rawName : "Partner";
+
+                return Promise.all([
+                    // Load existing chat messages
+                    database.ref('rooms/'+roomID+'/messages').once('value').then(snap => {
+                        const messages = [];
+                        snap.forEach(child => {
+                            messages.push({ key: child.key, data: child.val() });
+                        });
+                        messages.sort((a, b) => (a.data.time || 0) - (b.data.time || 0));
+                        messages.forEach(({ key, data }) => {
+                            renderChatMessage(data, key);
+                        });
+                        document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
+                    }),
+                    // Load shared memory data
+                    database.ref('rooms/'+roomID+'/memories').once('value').then(snap => {
+                        const memories = snap.val();
+                        if (memories) {
+                            window.loadedMemories = memories;
+                        } else {
+                            window.loadedMemories = {};
+                        }
+                    })
+                ]);
+            }).then(() => {
+                // Ensure video player shows empty state before entering the room
+                document.getElementById('empty-state').style.display = 'flex';
+                document.getElementById('main-video').style.opacity = 0;
+                document.getElementById('video-loader').style.display = 'none';
+                document.getElementById('ready-state').style.display = 'none';
+                // Clear any previous video source
+                document.getElementById('main-video').src = '';
+
                 // Hide the local setup loader before entering the room
                 toggleSetupLoader(false);
 
@@ -2354,6 +2462,7 @@
         let globalIsFirstLoad = true;
         let globalHasProcessedFirstNotification = false;
         let lastNotificationTime = 0;
+        let isLocalIdle = false;
         const NOTIFICATION_DEBOUNCE = 2000; // 2 seconds minimum between notifications
 
         function initCinemaSync() {
@@ -2369,16 +2478,17 @@
                 
                 const partnerSymbol = (mySymbol === 'X' ? 'O' : 'X');
                 const partnerOnlineData = d.online && d.online[partnerSymbol];
-                // User is online if presence data exists (idle or active)
-                const isPartnerOnline = !!partnerOnlineData;
-                
+                const now = Date.now();
+                const partnerLastSeen = partnerOnlineData && typeof partnerOnlineData.lastSeen === 'number' ? partnerOnlineData.lastSeen : null;
+                const isPartnerOnline = !!partnerOnlineData && partnerLastSeen !== null && (now - partnerLastSeen) < 15000;
+
                 const rawName = (partnerSymbol === 'O' ? d.playerO : d.playerX);
                 const validName = (rawName && rawName !== "Waiting..." && rawName !== "undefined" && rawName !== null) ? rawName : null;
-                partnerName = validName || "Partner";
-                
+                if (validName) partnerName = validName;
+
                 const statusEl = document.getElementById('status-text');
-                if (statusEl) { // Make sure element exists
-                    if(isPartnerOnline && validName) {
+                if (statusEl && !isLocalIdle) {
+                    if (isPartnerOnline && partnerName) {
                         statusEl.innerText = `${partnerName} is Watching with you ❤️`;
                         console.log('Status updated to watching with', partnerName);
                     } else {
@@ -2387,116 +2497,70 @@
                     }
                 }
 
-                // Only proceed with notifications if we have a valid partner name
-                if(validName) {
-                    // Show notifications on first load if partner is already online
-                    // This only applies to the second user (O) joining and finding first user already here
-                    if (globalIsFirstLoad && isPartnerOnline && !globalHasProcessedFirstNotification && mySymbol === 'O') {
-                        globalHasProcessedFirstNotification = true;
-                        const alertBox = document.getElementById('presence-alert');
-                        let initialMsg = `Our screen, our story... welcome home, ${myName}. 💖`;
-                        
-                        alertBox.innerText = initialMsg;
+                const wasPartnerPresent = globalLastOnlineState;
+
+                if (globalIsFirstLoad && isPartnerOnline && !globalHasProcessedFirstNotification && mySymbol === 'O') {
+                    globalHasProcessedFirstNotification = true;
+                    const alertBox = document.getElementById('presence-alert');
+                    let initialMsg = `Our screen, our story... welcome home, ${myName}. 💖`;
+                    alertBox.innerText = initialMsg;
+                    alertBox.classList.add('show');
+                    setTimeout(() => alertBox.classList.remove('show'), 5000);
+                    playSound('user-joined.mp3');
+                    if (isChatHidden || document.fullscreenElement) {
+                        const fsInd = document.getElementById('fs-typing-indicator');
+                        fsInd.innerHTML = `🔔 ${initialMsg}`;
+                        fsInd.classList.add('visible');
+                        setTimeout(() => fsInd.classList.remove('visible'), 5000);
+                    }
+                    const capturedPartnerName = partnerName;
+                    setTimeout(() => {
+                        if (!capturedPartnerName) return;
+                        alertBox.innerText = `${capturedPartnerName} is already here... 💖`;
+                        alertBox.classList.remove('show');
+                        void alertBox.offsetWidth;
                         alertBox.classList.add('show');
                         setTimeout(() => alertBox.classList.remove('show'), 5000);
-                        
-                        playSound('user-joined.mp3');
-                        
-                        if(isChatHidden || document.fullscreenElement) {
+                        if (isChatHidden || document.fullscreenElement) {
                             const fsInd = document.getElementById('fs-typing-indicator');
-                            fsInd.innerHTML = `🔔 ${initialMsg}`;
+                            fsInd.innerHTML = `🔔 ${capturedPartnerName} is already here... 💖`;
                             fsInd.classList.add('visible');
                             setTimeout(() => fsInd.classList.remove('visible'), 5000);
                         }
-                        
-                        // Queue second notification for the joining user
-                        const capturedPartnerName = validName;
-                        setTimeout(() => {
-                            alertBox.innerText = `${capturedPartnerName} is already here... 💖`;
-                            alertBox.classList.remove('show');
-                            void alertBox.offsetWidth; // Trigger reflow
-                            alertBox.classList.add('show');
-                            setTimeout(() => alertBox.classList.remove('show'), 5000);
-                            
-                            playSound('user-joined.mp3');
-                            
-                            if(isChatHidden || document.fullscreenElement) {
-                                const fsInd = document.getElementById('fs-typing-indicator');
-                                fsInd.innerHTML = `🔔 ${capturedPartnerName} is already here... 💖`;
-                                fsInd.classList.add('visible');
-                                setTimeout(() => fsInd.classList.remove('visible'), 5000);
-                            }
-                        }, 5000);
-                    }
-                    
-                    // Show join notification only when presence data first appears (actual join)
-                    const wasPartnerPresent = globalLastOnlineState;
-                    if (isPartnerOnline && !wasPartnerPresent && !globalIsFirstLoad) {
-                        console.log('Join notification triggered for', validName, 'presence data appeared');
-                        const now = Date.now();
+                    }, 5000);
+                }
+
+                if (!globalIsFirstLoad) {
+                    if (isPartnerOnline && !wasPartnerPresent) {
                         if (now - lastNotificationTime > NOTIFICATION_DEBOUNCE) {
                             lastNotificationTime = now;
                             const alertBox = document.getElementById('presence-alert');
-                            let msg = "";
-                            
-                            if (mySymbol === 'X') {
-                                msg = `${validName} joined the room... 💖`;
-                            } else {
-                                msg = `Our screen, our story... welcome home, ${myName}. 💖`;
-                            }
-                            
+                            const msg = mySymbol === 'X'
+                                ? `${partnerName} joined the room... 💖`
+                                : `Our screen, our story... welcome home, ${myName}. 💖`;
                             alertBox.innerText = msg;
                             alertBox.classList.add('show');
                             setTimeout(() => alertBox.classList.remove('show'), 5000);
-                            
                             playSound('user-joined.mp3');
-                            
-                            if(isChatHidden || document.fullscreenElement) {
+                            if (isChatHidden || document.fullscreenElement) {
                                 const fsInd = document.getElementById('fs-typing-indicator');
                                 fsInd.innerHTML = `🔔 ${msg}`;
                                 fsInd.classList.add('visible');
                                 setTimeout(() => fsInd.classList.remove('visible'), 5000);
                             }
-                            
-                            // For second user joining, show additional notification
-                            if (mySymbol === 'O') {
-                                setTimeout(() => {
-                                    const secondMsg = `${validName} is already here... 💖`;
-                                    alertBox.innerText = secondMsg;
-                                    alertBox.classList.remove('show');
-                                    void alertBox.offsetWidth; // Trigger reflow
-                                    alertBox.classList.add('show');
-                                    setTimeout(() => alertBox.classList.remove('show'), 5000);
-                                    
-                                    playSound('user-joined.mp3');
-                                    
-                                    if(isChatHidden || document.fullscreenElement) {
-                                        const fsInd = document.getElementById('fs-typing-indicator');
-                                        fsInd.innerHTML = `🔔 ${secondMsg}`;
-                                        fsInd.classList.add('visible');
-                                        setTimeout(() => fsInd.classList.remove('visible'), 5000);
-                                    }
-                                }, 5000);
-                            }
                         }
                     }
-                    
-                    // Show disconnection notification only when presence data completely disappears
-                    if (!isPartnerOnline && globalLastOnlineState && !globalIsFirstLoad) {
-                        console.log('Disconnect notification triggered for', partnerName, 'presence data disappeared');
-                        const now = Date.now();
-                        if (now - lastNotificationTime > NOTIFICATION_DEBOUNCE) {
+
+                    if (!isPartnerOnline && wasPartnerPresent) {
+                        if (!isLocalIdle && now - lastNotificationTime > NOTIFICATION_DEBOUNCE) {
                             lastNotificationTime = now;
                             const alertBox = document.getElementById('presence-alert');
                             const msg = `${partnerName} left the room... come back soon. 🥀`;
-                            
                             alertBox.innerText = msg;
                             alertBox.classList.add('show');
                             setTimeout(() => alertBox.classList.remove('show'), 5000);
-                            
                             playSound('user-disconnected.mp3');
-                            
-                            if(isChatHidden || document.fullscreenElement) {
+                            if (isChatHidden || document.fullscreenElement) {
                                 const fsInd = document.getElementById('fs-typing-indicator');
                                 fsInd.innerHTML = `🔔 ${msg}`;
                                 fsInd.classList.add('visible');
@@ -2504,14 +2568,10 @@
                             }
                         }
                     }
-
-                    globalLastOnlineState = !!isPartnerOnline;
-
-                    // Mark that we've processed the first load
-                    if (globalIsFirstLoad) {
-                        globalIsFirstLoad = false;
-                    }
                 }
+
+                globalLastOnlineState = isPartnerOnline;
+                if (globalIsFirstLoad) globalIsFirstLoad = false;
 
                 const isEmpty = !d.videoSrc || d.videoSrc === "";
                 const isMyLoad = (mySymbol === 'X' ? d.loadingX : d.loadingO);
@@ -2533,8 +2593,16 @@
                              const readyDiv = document.getElementById('ready-state');
                              readyDiv.style.display = 'flex';
                              isReadyAnimShown = true;
-                             setTimeout(() => { 
+                             autoPlayAfterReady = true;
+                             if (!video.paused) {
+                                 video.pause();
+                             }
+                             setTimeout(() => {
                                  readyDiv.style.display = 'none';
+                                 if (autoPlayAfterReady) {
+                                     autoPlayAfterReady = false;
+                                     video.play().catch(err => console.log('Auto-play after ready animation failed:', err));
+                                 }
                              }, 3000);
                          }
                      }
@@ -2569,17 +2637,47 @@
                 } else {
                     video.src = "";
                     subtitleData = [];
+                    currentSubtitleMode = 'none';
+                    document.getElementById('subtitle-ghost').innerHTML = "";
+                    const ghostElement = document.getElementById('subtitle-ghost');
+                    if (ghostElement) {
+                        ghostElement.style.display = 'none';
+                    }
                 }
             });
 
             database.ref('rooms/' + roomID).on('value', snap => { 
                 const d = snap.val(); if(!d) return;
-                if (d.subtitleMode === 'text' && d.subtitleContent) { parseAndSetSubtitles(d.subtitleContent); } 
-                else if (d.subtitleSrc && (!d.subtitleMode || d.subtitleMode === 'url')) { if(subtitleData.length === 0) { fetch(d.subtitleSrc).then(r => r.text()).then(text => parseAndSetSubtitles(text)).catch(e => console.error(e)); } }
+                if (d.subtitleMode === 'text' && d.subtitleContent) { 
+                    currentSubtitleMode = 'ghost';
+                    parseAndSetSubtitles(d.subtitleContent); 
+                } 
+                else if (d.subtitleMode === 'ghost' && d.subtitleContent) {
+                    currentSubtitleMode = 'ghost';
+                    parseAndSetSubtitles(d.subtitleContent);
+                }
+                else if (d.subtitleSrc && (!d.subtitleMode || d.subtitleMode === 'url' || d.subtitleMode === 'ghost')) { 
+                    currentSubtitleMode = 'ghost';
+                    if(subtitleData.length === 0) { 
+                        console.log('Fetching subtitle:', d.subtitleSrc); 
+                        fetch(d.subtitleSrc).then(r => { 
+                            console.log('Subtitle fetch status:', r.status); 
+                            return r.text(); 
+                        }).then(text => { 
+                            console.log('Subtitle text length:', text.length); 
+                            parseAndSetSubtitles(text); 
+                        }).catch(e => console.error('Subtitle fetch error:', e)); 
+                    } 
+                }
+                else if (d.subtitleMode === 'track') {
+                    currentSubtitleMode = 'track';
+                    // Native tracks are handled by syncSubtitles, no ghost subtitles needed
+                }
             });
 
             function parseAndSetSubtitles(text) {
                 subtitleData = []; document.getElementById('subtitle-ghost').innerHTML = ""; text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n'); const blocks = text.split(/\n\s*\n/);
+                console.log('Parsing subtitles, blocks:', blocks.length);
                 blocks.forEach(block => {
                     const lines = block.split('\n'); let timeLineIndex = -1;
                     for(let i=0; i<lines.length; i++) { if(lines[i].includes('-->')) { timeLineIndex = i; break; } }
@@ -2588,6 +2686,7 @@
                         if (textLines.length > 0) { subtitleData.push({ start: start, end: end, text: textLines.join('<br>') }); }
                     }
                 });
+                console.log('Parsed subtitleData length:', subtitleData.length);
             }
 
             video.oncanplay = () => { 
@@ -2610,7 +2709,18 @@
                 loader.style.display = 'none';
             };
             video.onloadedmetadata = () => { document.getElementById('durTime').innerText = formatTime(video.duration); };
-            video.addEventListener('play', () => { if(!isRemoteChange) cinemaRef.update({ state: 'play', time: video.currentTime, user: mySymbol }); updatePlayButton(true); showPlaybackRipple(); persistPlaybackState(); });
+            video.addEventListener('play', () => {
+                const readyDiv = document.getElementById('ready-state');
+                if (readyDiv && readyDiv.style.display === 'flex') {
+                    autoPlayAfterReady = true;
+                    video.pause();
+                    return;
+                }
+                if(!isRemoteChange) cinemaRef.update({ state: 'play', time: video.currentTime, user: mySymbol });
+                updatePlayButton(true);
+                showPlaybackRipple();
+                persistPlaybackState();
+            });
             video.addEventListener('pause', () => { if(!isRemoteChange) cinemaRef.update({ state: 'pause', time: video.currentTime, user: mySymbol }); updatePlayButton(false); showPlaybackRipple(); persistPlaybackState(); });
             
             video.ontimeupdate = () => { 
@@ -2624,7 +2734,23 @@
                 const nowSec = video.currentTime;
                 const activeLine = subtitleData.find(s => nowSec >= s.start && nowSec <= s.end);
                 const ghost = document.getElementById('subtitle-ghost');
-                if (activeLine) { if (ghost.innerText !== activeLine.text.replace(/<br>/g, '\n')) { ghost.innerHTML = `<span>${activeLine.text}</span>`; } } else { ghost.innerHTML = ""; }
+                // Only show ghost subtitles if we're not using native tracks
+                if (currentSubtitleMode !== 'track' && activeLine) { 
+                    if (ghost.innerText !== activeLine.text.replace(/<br>/g, '\n')) { 
+                        ghost.innerHTML = `<span>${activeLine.text}</span>`; 
+                        ghost.style.display = 'flex';
+                        console.log('👻 Showing ghost subtitle:', activeLine.text, 'mode:', currentSubtitleMode); 
+                    } 
+                } else { 
+                    // Always clear ghost subtitles when in track mode or no active line
+                    if (ghost.innerHTML || ghost.style.display !== 'none') { 
+                        ghost.innerHTML = ""; 
+                        ghost.style.display = 'none';
+                        if (currentSubtitleMode === 'track') {
+                            console.log('🚫 Cleared ghost subtitle for track mode');
+                        }
+                    } 
+                }
             };
 
             // Listen for modalOpen state changes to sync modal across all users
@@ -2840,6 +2966,36 @@
             }
             if(i === 'whisperInput') document.getElementById('whisper-overlay').style.display = 'none'; 
         }
+
+        function sendMovieSelectionMessage(movieName, targetName = '') {
+            if (!roomID || !myName || !movieName) return;
+            const otherSymbol = mySymbol === 'X' ? 'O' : 'X';
+            const payload = {
+                sender: myName,
+                type: 'movie-selection',
+                movieName: movieName,
+                targetName: (targetName && targetName !== 'Partner' && targetName !== 'My Love') ? targetName : '',
+                time: Date.now(),
+                heart: false
+            };
+
+            const pushMessage = () => {
+                database.ref('rooms/' + roomID + '/messages').push(payload).catch(err => console.error('Movie selection message failed:', err));
+            };
+
+            if (payload.targetName) {
+                pushMessage();
+                return;
+            }
+
+            database.ref('rooms/' + roomID + '/player' + otherSymbol).once('value').then(snap => {
+                const name = snap.val();
+                if (name && name !== 'Waiting...' && name !== 'Partner' && name !== 'My Love') {
+                    payload.targetName = name;
+                }
+            }).catch(() => {}).finally(pushMessage);
+        }
+
         let lastDisplayedDate = null;
 
         function addDateHeaderIfNeeded(timestamp) {
@@ -2960,6 +3116,20 @@
                     if (event.target.closest('.heart-pill')) return;
                     showScrapbook(m.title, m.movie, m.images, m.savedDate);
                 };
+            } else if (m.type === 'movie-selection') {
+                const isOwnMessage = m.sender === myName;
+                const targetName = m.targetName || partnerName;
+                const notificationText = isOwnMessage ? `You picked a movie for ${targetName}` : `${m.sender} picked a movie for you.`;
+
+                div.className = 'msg movie-selection';
+                div.innerHTML = `
+                    <div class="notif-whisper-container">
+                        <div class="whisper-top-row">
+                            <span>${notificationText}</span>
+                        </div>
+                        <div class="notif-movie-name">${m.movieName}</div>
+                    </div>
+                `;
             } else {
                 div.className = `msg ${m.sender === myName ? 'me' : 'them'}`;
                 div.innerHTML = `
@@ -3096,6 +3266,9 @@
                 updatedAt: Date.now(),
                 savedBy: myName || ""
             };
+            if (currentSubtitleUrl) {
+                payload.subtitleSrc = currentSubtitleUrl;
+            }
 
             database.ref('rooms/' + roomID + '/lastPlayback').set(payload).catch(() => {});
         }
@@ -3135,6 +3308,9 @@
                 savedAt: Date.now(),
                 savedBy: myName || "Anonymous"
             };
+            if (currentSubtitleUrl) {
+                payload.subtitleSrc = currentSubtitleUrl;
+            }
 
             // Save to database, discarding any previous save
             database.ref('rooms/' + roomID + '/savedVideoState').set(payload).then(() => {
@@ -3168,6 +3344,16 @@
             document.getElementById('subtitle-ghost').innerHTML = "";
             isReadyAnimShown = false;
             clearTimeout(videoLoadingTimeout);
+            currentSubtitleMode = 'ghost'; // Use ghost overlay rendering when subtitles load
+            currentSubtitleUrl = null; // Discard previous subtitle link for the new movie
+            
+            // Force immediate clearing of any ghost subtitles
+            const ghostElement = document.getElementById('subtitle-ghost');
+            if (ghostElement) {
+                ghostElement.innerHTML = "";
+                ghostElement.style.display = 'flex';
+                console.log('🔄 Switching to ghost subtitle mode - cleared any previous ghost subtitles');
+            }
 
             // Immediately update the local player so it doesn't wait on the DB round trip.
             if ((video.currentSrc || video.src || "") !== validatedUrl) {
@@ -3178,14 +3364,49 @@
                 video.load();
             }
 
+            // Remove any old native subtitle tracks before loading a new video
+            // First, disable all text tracks and clear their cues
+            if (video.textTracks) {
+                for (let i = video.textTracks.length - 1; i >= 0; i--) {
+                    const track = video.textTracks[i];
+                    track.mode = 'disabled';
+                    // Clear all cues
+                    while (track.cues && track.cues.length > 0) {
+                        track.removeCue(track.cues[0]);
+                    }
+                    while (track.activeCues && track.activeCues.length > 0) {
+                        // Active cues are read-only, but we can try to hide them
+                        track.activeCues[0].text = '';
+                    }
+                }
+            }
+            
+            // Remove all track elements from DOM
+            video.querySelectorAll('track').forEach(track => {
+                const oldSrc = track.src;
+                track.remove();
+                if (oldSrc) {
+                    URL.revokeObjectURL(oldSrc);
+                }
+            });
+
             database.ref('rooms/' + roomID).update({
                 videoSrc: validatedUrl,
                 subtitleSrc: "",
                 subtitleContent: "",
-                subtitleMode: "url",
+                subtitleMode: "ghost",
                 loadingX: true,
                 loadingO: true
             });
+            const subtitleUrl = validatedUrl.replace(/\.mp4$/i, '.vtt');
+            
+            // Wait for video to actually start loading before injecting subtitles
+            // This prevents subtitle track from breaking video connection during handshake
+            video.oncanplay = function() {
+                syncSubtitles(video, subtitleUrl);
+                // Remove listener so it doesn't trigger every play/pause
+                video.oncanplay = null;
+            };
             // Reset shared playback state for the new video to avoid stale sync conflicts - only if local action
             if (!isRemote) {
                 database.ref('rooms/' + roomID + '/cinema').update({
@@ -3211,6 +3432,64 @@
                 database.ref('rooms/' + roomID).update({ loadingX: false, loadingO: false }).catch(() => {});
                 videoLoadingTimeout = null;
             }, VIDEO_LOAD_TIMEOUT);
+        }
+
+        async function syncSubtitles(videoElement, subtitleUrl) {
+            if (!subtitleUrl) return;
+
+            try {
+                // 1. DEEP CLEAN: Disable and remove all existing tracks and cues
+                if (videoElement.textTracks) {
+                    for (let i = videoElement.textTracks.length - 1; i >= 0; i--) {
+                        const track = videoElement.textTracks[i];
+                        track.mode = 'disabled';
+                        // Clear all cues
+                        while (track.cues && track.cues.length > 0) {
+                            track.removeCue(track.cues[0]);
+                        }
+                        while (track.activeCues && track.activeCues.length > 0) {
+                            // Active cues are read-only, but we can try to hide them
+                            track.activeCues[0].text = '';
+                        }
+                    }
+                }
+
+                const existingTracks = videoElement.querySelectorAll('track');
+                existingTracks.forEach(track => {
+                    const oldSrc = track.src;
+                    track.remove();
+                    if (oldSrc) {
+                        URL.revokeObjectURL(oldSrc); // Clean up blob URLs
+                    }
+                });
+
+                // 2. Fetch the new data through your Vercel proxy
+                const proxyUrl = SUBTITLE_PROXY + encodeURIComponent(subtitleUrl);
+                console.log("syncSubtitles: Fetching via Vercel proxy:", proxyUrl);
+                const response = await fetch(proxyUrl);
+                if (!response.ok) {
+                    throw new Error(`Proxy fetch failed: ${response.status}`);
+                }
+                const text = await response.text();
+
+                // 3. Parse subtitles for ghost overlay rendering
+                parseVttTextToSubtitleData(text);
+                currentSubtitleUrl = subtitleUrl;
+                currentSubtitleMode = 'ghost';
+                const ghostElement = document.getElementById('subtitle-ghost');
+                if (ghostElement) {
+                    ghostElement.style.display = 'flex';
+                }
+
+                // Persist the current subtitle link in the room only on successful fetch
+                if (roomID) {
+                    database.ref('rooms/' + roomID).update({ subtitleSrc: subtitleUrl, subtitleMode: 'ghost', subtitleContent: text }).catch(() => {});
+                }
+
+                console.log("✅ Subtitles loaded into ghost overlay mode!");
+            } catch (error) {
+                console.error("❌ Sync Error:", error);
+            }
         }
 
         function continueOurMoment() {
@@ -3604,8 +3883,10 @@
             if (now - lastMovieSelectionTime < VIDEO_SELECTION_DEBOUNCE) return;
             lastMovieSelectionTime = now;
             
+            const cleanFileName = movieName.replace(/\.mp4$/i, '');
             const url = `https://archive.org/download/${ROMANTIC_ITEM_ID}/${encodeURIComponent(movieName)}`;
             database.ref('rooms/' + roomID).update({ modalOpen: false });
+            sendMovieSelectionMessage(cleanFileName, partnerName);
             setVideoSrcByUrl(url);
             hideRomanticMovieOverlay();
         }
