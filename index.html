@@ -2339,7 +2339,8 @@
                 } else {
                     if(d['player' + mySymbol] !== myName) database.ref('rooms/' + roomID).update({ ['player' + mySymbol]: myName });
                     if(d.modalOpen === undefined) database.ref('rooms/' + roomID).update({ modalOpen: true });
-                    // Keep the existing video source intact for room members
+                    // Clear video source to ensure empty state when entering room
+                    database.ref('rooms/' + roomID).update({ videoSrc: "" });
                 }
 
                 const partnerSymbol = (mySymbol === 'X' ? 'O' : 'X');
@@ -3197,7 +3198,7 @@
             const listenerStartTime = initialChatLoadTime;
             database.ref('rooms/'+roomID+'/messages').on('child_added', snap => {
                 const m = snap.val();
-                if (!m || m.time < listenerStartTime) return;
+                if (!m) return;
                 renderChatMessage(m, snap.key);
             });
 
