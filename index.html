@@ -554,6 +554,7 @@
 
         #subtitle-ghost { position: absolute; bottom: 5%; left: 5%; right: 5%; text-align: center; pointer-events: none; z-index: 2147483647; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; min-height: 50px; transition: bottom 0.35s ease, opacity 0.35s ease, transform 0.35s ease; opacity: 1; transform: translateY(0); }
         #video-container.show-controls #subtitle-ghost { bottom: 18%; transform: translateY(-12px); }
+        #video-container.whisper-active #subtitle-ghost { bottom: 23%; transform: translateY(-12px); }
         #subtitle-ghost span { background: rgba(0, 0, 0, 0.75); color: #fff; font-family: 'Poppins', sans-serif; font-size: clamp(14px, 1.8vw, 20px); padding: 10px 16px; border-radius: 20px; line-height: 1.45; text-shadow: 1px 1px 6px rgba(0,0,0,0.8); white-space: pre-wrap; max-width: 90%; box-shadow: 0 18px 48px rgba(0,0,0,0.35); display: inline-flex; justify-content: center; margin: 0 12px; box-sizing: border-box; }
         video::cue { font-family: 'Poppins', sans-serif; background: rgba(0, 0, 0, 0.75); color: #fff; padding: 10px 16px; border-radius: 20px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); line-height: 1.45; font-size: clamp(14px, 1.8vw, 20px); }
 
@@ -2302,25 +2303,22 @@
         function startSession() {
             const userRef = database.ref('rooms/' + roomID + '/online/' + mySymbol);
             let presenceInterval = null;
-            let isTabHidden = false;
 
             const updatePresence = () => {
-                isLocalIdle = isTabHidden;
-                // Include idle status in presence data
+                // Keep sending heartbeat regardless of tab state
                 userRef.set({
-                    lastSeen: Date.now(),
-                    idle: isTabHidden
+                    lastSeen: Date.now()
                 });
             };
 
             updatePresence();
-            presenceInterval = setInterval(updatePresence, 10000);
+            // Send heartbeat every 5 seconds (more frequent to catch disconnections faster)
+            presenceInterval = setInterval(updatePresence, 5000);
 
-            // Track tab visibility to distinguish idle from disconnect
+            // Track tab visibility for UI purposes only (not for online detection)
             document.addEventListener('visibilitychange', () => {
-                isTabHidden = document.hidden;
-                isLocalIdle = isTabHidden;
-                updatePresence(); // Update presence immediately when visibility changes
+                isLocalIdle = document.hidden;
+                // Don't call updatePresence here - let the interval handle it
             });
 
             // Only remove presence on actual page close/refresh/network disconnect
@@ -2845,7 +2843,7 @@
 
                 setTimeout(() => { isRemoteChange = false; }, 250);
             });
-            database.ref('rooms/' + roomID + '/react').on('value', snap => { const d = snap.val(); if(d && d.user !== myName) { showReaction(d.emoji, d.text, d.ani, d.user); database.ref('rooms/' + roomID + '/react').set(null); } });
+            database.ref('rooms/' + roomID + '/react').on('child_added', snap => { const d = snap.val(); if(d && d.user !== myName) { showReaction(d.emoji, d.text, d.ani, d.user); database.ref('rooms/' + roomID + '/react/' + snap.key).remove(); } });
         }
 
         function formatTime(t) { if(isNaN(t) || t === Infinity) return "0:00"; let h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = Math.floor(t % 60); return h > 0 ? `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}` : `${m}:${s < 10 ? '0' : ''}${s}`; }
@@ -2954,17 +2952,20 @@
         function toggleFullscreen() { const w = document.getElementById('cinema-wrapper'); if (!document.fullscreenElement) w.requestFullscreen(); else document.exitFullscreen(); }
         
         function toggleWhisper() { 
-            const o = document.getElementById('whisper-overlay'); 
+            const o = document.getElementById('whisper-overlay');
+            const videoContainer = document.getElementById('video-container');
             if(o.style.display === 'none' || o.style.display === '') {
-                o.style.display = 'block'; 
+                o.style.display = 'block';
+                videoContainer.classList.add('whisper-active');
                 document.getElementById('whisperInput').focus(); 
             } else {
                 o.style.display = 'none';
+                videoContainer.classList.remove('whisper-active');
                 document.getElementById('main-video').focus(); 
             }
         }
 
-        function sendReaction(e, t, a) { database.ref('rooms/' + roomID + '/react').set({ user: myName, emoji: e, text: t, ani: a }); showReaction(e, t, a, myName); }
+        function sendReaction(e, t, a) { database.ref('rooms/' + roomID + '/react').push({ user: myName, emoji: e, text: t, ani: a }); showReaction(e, t, a, myName); }
         function showReaction(e, t, a, s) { const c = document.createElement('div'); const isMe = s === myName; c.className = `reaction-popup ${isMe ? 'me-pill' : 'them-pill'}`; c.innerHTML = `<div class="sender-tag">${isMe ? 'You' : s} says...</div><div class="inner-content"><div class="reaction-emoji ${a}">${e}</div><div class="reaction-text">${t}</div></div>`; c.style.left = Math.random() * 40 + 10 + "%"; document.getElementById('cinema-wrapper').appendChild(c); setTimeout(() => c.remove(), 3500); }
         function spawnPetals() { const c = document.getElementById('video-container'); const clr = ['#ff4d6d', '#ffafbd', '#ff1493']; for(let i=0; i<35; i++) { const p = document.createElement('div'); p.className = 'petal'; p.style.backgroundColor = clr[Math.floor(Math.random() * clr.length)]; p.style.left = Math.random() * 100 + "%"; p.style.top = "-10px"; p.style.animationDuration = (Math.random() * 3 + 3) + "s"; p.style.opacity = Math.random() * 0.7 + 0.3; p.style.width = Math.random() * 10 + 10 + "px"; p.style.height = p.style.width; c.appendChild(p); setTimeout(() => p.remove(), 6000); } }
         function sendChatMessage(i) { 
@@ -2980,7 +2981,10 @@
                     btn.style.pointerEvents = "auto";
                 }
             }
-            if(i === 'whisperInput') document.getElementById('whisper-overlay').style.display = 'none'; 
+            if(i === 'whisperInput') {
+                document.getElementById('whisper-overlay').style.display = 'none';
+                document.getElementById('video-container').classList.remove('whisper-active');
+            } 
         }
 
         function sendMovieSelectionMessage(movieName, targetName = '') {
@@ -2996,7 +3000,15 @@
             };
 
             const pushMessage = () => {
-                database.ref('rooms/' + roomID + '/messages').push(payload).catch(err => console.error('Movie selection message failed:', err));
+                console.log('📤 Pushing to: rooms/' + roomID + '/messages', payload);
+                database.ref('rooms/' + roomID + '/messages').push(payload)
+                    .then(ref => {
+                        console.log('✅ Movie selection message saved with key:', ref.key);
+                    })
+                    .catch(err => {
+                        console.error('❌ Movie selection message FAILED:', err);
+                        alert('Failed to save movie selection message: ' + err.message);
+                    });
             };
 
             if (payload.targetName) {
