@@ -1786,6 +1786,7 @@
                     
                     <video id="main-video" preload="auto" playsinline>
                         <source src="" type="video/mp4">
+                        <source src="" type="video/x-matroska">
                     </video>
                     
                     <div id="subtitle-ghost"></div>
@@ -1907,7 +1908,7 @@
 
             <div id="private-link-area" style="display:none; margin-top: 10px;">
                 <div class="private-link-input-with-icon">
-                    <input type="text" id="private-link-input" placeholder="Paste your private .mp4 link..." oninput="const privateLinkPlayBtn = document.getElementById('private-link-play-btn'); if (privateLinkPlayBtn) privateLinkPlayBtn.style.display = this.value.trim().length > 0 ? 'inline-flex' : 'none';" style="flex:1; border:none; outline:none; background:transparent; font-family:'Poppins', sans-serif; font-size:14px; color:var(--velvet-berry); height:48px; line-height:48px; vertical-align:middle; padding:0; margin:0; box-sizing:border-box;">
+                    <input type="text" id="private-link-input" placeholder="Paste your private .mp4 or .mkv link..." oninput="const privateLinkPlayBtn = document.getElementById('private-link-play-btn'); if (privateLinkPlayBtn) privateLinkPlayBtn.style.display = this.value.trim().length > 0 ? 'inline-flex' : 'none';" style="flex:1; border:none; outline:none; background:transparent; font-family:'Poppins', sans-serif; font-size:14px; color:var(--velvet-berry); height:48px; line-height:48px; vertical-align:middle; padding:0; margin:0; box-sizing:border-box;">
                     <button id="private-link-play-btn" style="display:none;" onclick="playPrivateLinkMovie(document.getElementById('private-link-input').value)" aria-label="Play private link">
                         <svg viewBox="0 0 24 24" width="18" height="18" style="fill: currentColor;">
                             <path d="M8 5v14l11-7z"/>
@@ -1948,7 +1949,8 @@
         let currentSubtitleMode = 'none'; // Track current subtitle mode: 'none', 'ghost', 'track'
         let currentSubtitleUrl = null; // Valid .vtt subtitle link for the current movie
         let isDragging = false; 
-        let isReadyAnimShown = false; 
+        let isReadyAnimShown = false;
+        let isReadyAnimActive = false; // Track if ready animation is currently playing - prevent playback during this time
         let isChatHidden = false;
 
         function parseVttTextToSubtitleData(text) {
@@ -2023,47 +2025,54 @@
         }
 
         async function verifyAccess() {
-            console.log('Starting verifyAccess');
-            const btnText = document.getElementById('btnText');
-            const btnLoader = document.getElementById('btnLoader');
-            const unlockBtn = document.getElementById('unlockBtn');
-            const input = document.getElementById('passInput');
-            const statusText = document.getElementById('statusText');
-
-            if (isLocked) {
-                if (statusText) {
-                    statusText.innerText = 'Locked - wait for the timer';
-                    statusText.style.display = 'block';
-                }
-                return;
-            }
-
-            // Start UI
-            unlockBtn.disabled = true;
-            input.disabled = true;
-            btnText.innerText = "Checking...";
-            btnLoader.style.display = "inline-block";
-            if (statusText) {
-                statusText.innerText = '';
-                statusText.style.display = 'none';
-            }
-            clearPasswordLockMessage();
-
             try {
+                console.log('✓ verifyAccess() called');
+                const btnText = document.getElementById('btnText');
+                const btnLoader = document.getElementById('btnLoader');
+                const unlockBtn = document.getElementById('unlockBtn');
+                const input = document.getElementById('passInput');
+                const statusText = document.getElementById('statusText');
+
+                console.log('✓ DOM elements retrieved:', { btnText: !!btnText, input: !!input, statusText: !!statusText });
+
+                if (isLocked) {
+                    console.log('⏳ Account locked');
+                    if (statusText) {
+                        statusText.innerText = 'Locked - wait for the timer';
+                        statusText.style.display = 'block';
+                    }
+                    return;
+                }
+
+                // Start UI
+                unlockBtn.disabled = true;
+                input.disabled = true;
+                btnText.innerText = "Checking...";
+                btnLoader.style.display = "inline-block";
+                if (statusText) {
+                    statusText.innerText = '';
+                    statusText.style.display = 'none';
+                }
+                clearPasswordLockMessage();
+
+                console.log('📡 Fetching password from Firebase...');
                 // Wrap database call with timeout to prevent hanging
-                const dbPromise = firebase.database().ref('build_revision').once('value');
+                const dbPromise = database.ref('build_revision').once('value');
                 const timeoutPromise = new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('Database read timeout')), 10000)
                 );
                 const snap = await Promise.race([dbPromise, timeoutPromise]);
                 const correctCode = snap.val();
 
+                console.log('✓ Password retrieved from database:', correctCode);
+
                 // Verify password from database exists
-                if (!correctCode && correctCode !== 0) {
+                if (correctCode === undefined || correctCode === null || correctCode === '') {
                     throw new Error('Password not found in database');
                 }
 
                 if (input.value.trim() === String(correctCode)) {
+                    console.log('✓✓✓ Password correct! Unlocking...');
                     isAuthenticated = true;
                     btnText.innerText = "Welcome ❤️";
                     btnLoader.style.display = "none";
@@ -2078,6 +2087,7 @@
                 }
 
                 // Wrong code path
+                console.log('✗ Wrong password');
                 attempts += 1;
                 const remaining = 3 - attempts;
 
@@ -2094,6 +2104,7 @@
                 }
 
                 // Lockout path
+                console.log('🔒 Account locked - too many attempts');
                 isLocked = true;
                 btnText.innerText = "Locked";
                 btnLoader.style.display = "none";
@@ -2124,16 +2135,24 @@
                     }
                 }, 1000);
             } catch (e) {
-                console.error('Error in verifyAccess:', e);
+                console.error('❌ Error in verifyAccess:', e);
+                console.error('Error code:', e.code);
+                console.error('Error message:', e.message);
+                
+                // Always re-enable the button on error
+                if (unlockBtn) unlockBtn.disabled = false;
+                if (input) input.disabled = false;
+                btnText.innerText = "Unlock Our Space";
+                btnLoader.style.display = "none";
                 
                 // Check for permission denied (Firebase rules issue)
                 if (e.code === 'PERMISSION_DENIED') {
+                    console.error('🔐 Firebase permission denied');
                     if (statusText) {
                         statusText.innerText = 'Database access denied. Check Firebase rules.';
                         statusText.style.display = 'block';
                     }
                     btnText.innerText = "Access Blocked";
-                    btnLoader.style.display = "none";
                     unlockBtn.disabled = true;
                     input.disabled = true;
                     return;
@@ -2141,12 +2160,12 @@
 
                 // Check for missing password in database
                 if (e.message === 'Password not found in database') {
+                    console.error('🚨 Password not configured in database');
                     if (statusText) {
                         statusText.innerText = 'System error: Password not configured. Contact admin.';
                         statusText.style.display = 'block';
                     }
                     btnText.innerText = "System Error";
-                    btnLoader.style.display = "none";
                     unlockBtn.disabled = true;
                     input.disabled = true;
                     return;
@@ -2154,6 +2173,7 @@
 
                 // Check for timeout
                 if (e.message === 'Database read timeout') {
+                    console.error('⏱️ Database timeout');
                     if (statusText) statusText.innerText = 'Database timeout. Check your connection & try again.';
                     btnText.innerText = "Unlock Our Space";
                     btnLoader.style.display = "none";
@@ -2162,16 +2182,19 @@
                     return;
                 }
                 
+                // Generic error - increment attempts
+                console.log('⚠️ Generic error, incrementing attempts');
                 attempts += 1;
                 const remaining = Math.max(0, 3 - attempts);
 
                 if (remaining > 0) {
-                    if (statusText) statusText.innerText = `Wrong password! ${remaining} attempts left`;
+                    if (statusText) statusText.innerText = `Error: ${e.message}. ${remaining} attempts left`;
                     btnText.innerText = "Unlock Our Space";
                     btnLoader.style.display = "none";
                     unlockBtn.disabled = false;
                     input.disabled = false;
                 } else {
+                    console.log('🔒 Account locked due to errors');
                     isLocked = true;
                     if (statusText) statusText.innerText = `Try again in 60 seconds.`;
                     let countdown = 60;
@@ -2604,12 +2627,14 @@
                              const readyDiv = document.getElementById('ready-state');
                              readyDiv.style.display = 'flex';
                              isReadyAnimShown = true;
+                             isReadyAnimActive = true; // Prevent any playback during animation
                              autoPlayAfterReady = true;
                              if (!video.paused) {
                                  video.pause();
                              }
                              setTimeout(() => {
                                  readyDiv.style.display = 'none';
+                                 isReadyAnimActive = false; // Animation finished, allow playback now
                                  if (autoPlayAfterReady) {
                                      autoPlayAfterReady = false;
                                      video.play().catch(err => console.log('Auto-play after ready animation failed:', err));
@@ -2641,11 +2666,24 @@
                 lastSavedVideoStateTime = d.savedAt;
             });
 
+            // Track if we've loaded the initial video (on join)
+            let hasLoadedInitialVideo = false;
+            
             database.ref('rooms/' + roomID + '/videoSrc').on('value', snap => {
                 const newSrc = snap.val();
                 const currentSrc = (video.currentSrc || video.src || "");
+                
+                // Skip auto-load on first join - only load when movie list close button is clicked
+                if (!hasLoadedInitialVideo) {
+                    console.log('⏭️  Skipping auto-load on join. Video will load when close button is clicked.');
+                    hasLoadedInitialVideo = true;
+                    return;
+                }
+                
+                // When OTHER users select movies, sync the video source
                 if (newSrc) {
                     if (currentSrc !== newSrc) {
+                        console.log('📺 Other user selected movie, syncing:', newSrc);
                         setVideoSrcByUrl(newSrc, true);
                     }
                 } else {
@@ -2662,57 +2700,70 @@
                 }
             });
 
-            database.ref('rooms/' + roomID).on('value', snap => { 
-                const d = snap.val(); if(!d) return;
-                if (d.subtitleMode === 'text' && d.subtitleContent) { 
-                    currentSubtitleMode = 'ghost';
-                    parseAndSetSubtitles(d.subtitleContent); 
-                } 
-                else if (d.subtitleMode === 'ghost' && d.subtitleContent) {
-                    currentSubtitleMode = 'ghost';
-                    parseAndSetSubtitles(d.subtitleContent);
-                }
-                else if (d.subtitleSrc && (!d.subtitleMode || d.subtitleMode === 'url' || d.subtitleMode === 'ghost')) { 
-                    currentSubtitleMode = 'ghost';
-                    if(subtitleData.length === 0) { 
-                        console.log('Fetching subtitle:', d.subtitleSrc); 
-                        fetch(d.subtitleSrc).then(r => { 
-                            console.log('Subtitle fetch status:', r.status); 
-                            return r.text(); 
-                        }).then(text => { 
-                            console.log('Subtitle text length:', text.length); 
-                            parseAndSetSubtitles(text); 
-                        }).catch(e => console.error('Subtitle fetch error:', e)); 
-                    } 
-                }
-                else if (d.subtitleMode === 'track') {
-                    currentSubtitleMode = 'track';
-                    // Native tracks are handled by syncSubtitles, no ghost subtitles needed
+            // Subtitle content listener - ONLY update when subtitleContent actually changes
+            let lastProcessedSubtitleContent = null;
+            database.ref('rooms/' + roomID).on('child_changed', snap => {
+                if (snap.key === 'subtitleContent') {
+                    const content = snap.val();
+                    if (content && content !== lastProcessedSubtitleContent) {
+                        lastProcessedSubtitleContent = content;
+                        database.ref('rooms/' + roomID + '/subtitleMode').once('value').then(modeSnap => {
+                            const mode = modeSnap.val();
+                            if (mode === 'ghost' || mode === 'text') {
+                                currentSubtitleMode = 'ghost';
+                                parseAndSetSubtitles(content);
+                            }
+                        });
+                    }
                 }
             });
 
             function parseAndSetSubtitles(text) {
-                subtitleData = []; document.getElementById('subtitle-ghost').innerHTML = ""; text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n'); const blocks = text.split(/\n\s*\n/);
-                console.log('Parsing subtitles, blocks:', blocks.length);
+                // Skip if text is empty or hasn't changed
+                if (!text || text.trim().length === 0) {
+                    console.log('⏭️  Skipping empty subtitle content');
+                    return;
+                }
+                
+                subtitleData = []; 
+                document.getElementById('subtitle-ghost').innerHTML = ""; 
+                text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n'); 
+                const blocks = text.split(/\n\s*\n/);
+                console.log('🎬 Parsing subtitles, blocks:', blocks.length);
+                
                 blocks.forEach(block => {
-                    const lines = block.split('\n'); let timeLineIndex = -1;
-                    for(let i=0; i<lines.length; i++) { if(lines[i].includes('-->')) { timeLineIndex = i; break; } }
+                    const lines = block.split('\n'); 
+                    let timeLineIndex = -1;
+                    for(let i=0; i<lines.length; i++) { 
+                        if(lines[i].includes('-->')) { 
+                            timeLineIndex = i; 
+                            break; 
+                        } 
+                    }
                     if (timeLineIndex !== -1) {
-                        const times = lines[timeLineIndex].split('-->'); const start = parseTime(times[0]); const end = parseTime(times[1]); const textLines = lines.slice(timeLineIndex + 1).map(l => l.trim()).filter(l => l && isNaN(l));
-                        if (textLines.length > 0) { subtitleData.push({ start: start, end: end, text: textLines.join('<br>') }); }
+                        const times = lines[timeLineIndex].split('-->'); 
+                        const start = parseTime(times[0]); 
+                        const end = parseTime(times[1]); 
+                        const textLines = lines.slice(timeLineIndex + 1).map(l => l.trim()).filter(l => l && isNaN(l));
+                        if (textLines.length > 0) { 
+                            subtitleData.push({ start: start, end: end, text: textLines.join('<br>') }); 
+                        }
                     }
                 });
-                console.log('Parsed subtitleData length:', subtitleData.length);
+                console.log('✨ Parsed subtitleData length:', subtitleData.length);
             }
 
-            video.oncanplay = () => { 
+            // Don't override video.oncanplay here - let selectMovie() set it for subtitle loading
+            // Instead use a separate handler
+            video.addEventListener('canplay', () => { 
                 clearTimeout(videoLoadingTimeout);
                 database.ref('rooms/' + roomID + '/loading' + mySymbol).once('value').then(snap => {
                     if(snap.val() === true) {
-                database.ref('rooms/' + roomID).update({ ['loading' + mySymbol]: false });
+                        database.ref('rooms/' + roomID).update({ ['loading' + mySymbol]: false });
                     }
-                });
-            };
+                }).catch(() => {});
+            }, { once: true }); // Only trigger once per video load
+            
             
             video.onerror = () => { 
                 clearTimeout(videoLoadingTimeout);
@@ -2822,20 +2873,25 @@
                 }
 
                 if (remoteState === 'play') {
-                    const maybePlay = () => {
-                        if (video.paused || shouldSeek) {
-                            video.play().catch(e => console.log("Auto-play blocked", e));
-                        }
-                    };
-
-                    if (video.readyState >= 2) {
-                        maybePlay();
-                    } else {
-                        const onCanPlay = () => {
-                            video.removeEventListener('canplay', onCanPlay);
-                            maybePlay();
+                    // Don't auto-play if ready animation is active
+                    if (!isReadyAnimActive) {
+                        const maybePlay = () => {
+                            if (video.paused || shouldSeek) {
+                                video.play().catch(e => console.log("Auto-play blocked", e));
+                            }
                         };
-                        video.addEventListener('canplay', onCanPlay);
+
+                        if (video.readyState >= 2) {
+                            maybePlay();
+                        } else {
+                            const onCanPlay = () => {
+                                video.removeEventListener('canplay', onCanPlay);
+                                maybePlay();
+                            };
+                            video.addEventListener('canplay', onCanPlay);
+                        }
+                    } else {
+                        console.log('⏸️ Ready animation active - skipping auto-play');
                     }
                 } else {
                     video.pause();
@@ -3356,7 +3412,7 @@
             if (!/^https?:\/\//i.test(cleaned)) {
                 return null;
             }
-            // Accept .mp4 and stream-friendly links; remove accidental surrounding punctuation
+            // Accept .mp4, .mkv and stream-friendly links; remove accidental surrounding punctuation
             cleaned = cleaned.replace(/[\s<>"']+/g, '');
             return cleaned;
         }
@@ -3434,7 +3490,10 @@
                     loadingO: true
                 });
             }
-            const subtitleUrl = validatedUrl.replace(/\.mp4$/i, '.vtt');
+            // Support both .mp4 and .mkv video files - replace with .vtt for subtitles
+            const subtitleUrl = validatedUrl.replace(/\.(mp4|mkv)$/i, '.vtt').replace(/%E2%80%8B/g, '');
+            console.log('📽️ Movie loaded - Video URL:', validatedUrl);
+            console.log('📄 Expected subtitle URL:', subtitleUrl);
             
             // Wait for video to actually start loading before injecting subtitles
             // This prevents subtitle track from breaking video connection during handshake
@@ -3471,7 +3530,16 @@
         }
 
         async function syncSubtitles(videoElement, subtitleUrl) {
-            if (!subtitleUrl) return;
+            if (!subtitleUrl) {
+                console.log('⚠️ syncSubtitles: No subtitle URL provided');
+                return;
+            }
+
+            // Skip if already attempted to fetch this URL
+            if (currentSubtitleUrl === subtitleUrl) {
+                console.log('⏭️ syncSubtitles: Already attempted to fetch this URL, skipping');
+                return;
+            }
 
             try {
                 // 1. DEEP CLEAN: Disable and remove all existing tracks and cues
@@ -3479,13 +3547,8 @@
                     for (let i = videoElement.textTracks.length - 1; i >= 0; i--) {
                         const track = videoElement.textTracks[i];
                         track.mode = 'disabled';
-                        // Clear all cues
                         while (track.cues && track.cues.length > 0) {
                             track.removeCue(track.cues[0]);
-                        }
-                        while (track.activeCues && track.activeCues.length > 0) {
-                            // Active cues are read-only, but we can try to hide them
-                            track.activeCues[0].text = '';
                         }
                     }
                 }
@@ -3495,20 +3558,43 @@
                     const oldSrc = track.src;
                     track.remove();
                     if (oldSrc) {
-                        URL.revokeObjectURL(oldSrc); // Clean up blob URLs
+                        URL.revokeObjectURL(oldSrc);
                     }
                 });
 
-                // 2. Fetch the new data through your Vercel proxy
+                // 2. Fetch subtitles via proxy - URL is already properly encoded by archive.org
+                console.log("📥 Fetching subtitles from:", subtitleUrl);
+                
+                // URL is already encoded by archive.org, just pass it directly to proxy
                 const proxyUrl = SUBTITLE_PROXY + encodeURIComponent(subtitleUrl);
-                console.log("syncSubtitles: Fetching via Vercel proxy:", proxyUrl);
+                console.log("📤 Proxy URL:", proxyUrl);
+                
                 const response = await fetch(proxyUrl);
+                console.log("📊 Fetch response status:", response.status);
+                
                 if (!response.ok) {
                     throw new Error(`Proxy fetch failed: ${response.status}`);
                 }
-                const text = await response.text();
+                
+                let text = await response.text();
+                console.log("📝 Fetched text length:", text.length, "bytes");
+                
+                if (!text || text.trim().length === 0) {
+                    console.log("ℹ️ Subtitle file not found or empty:", subtitleUrl);
+                    currentSubtitleUrl = subtitleUrl; // Mark as attempted
+                    // Update Firebase so other user knows we tried
+                    if (roomID) {
+                        database.ref('rooms/' + roomID).update({ 
+                            subtitleSrc: subtitleUrl, 
+                            subtitleMode: 'ghost', 
+                            subtitleContent: "" 
+                        }).catch(() => {});
+                    }
+                    return;
+                }
 
-                // 3. Parse subtitles for ghost overlay rendering
+                // 3. Parse subtitles and update Firebase for sync
+                console.log("🔍 Parsing VTT file with", text.length, "characters...");
                 parseVttTextToSubtitleData(text);
                 currentSubtitleUrl = subtitleUrl;
                 currentSubtitleMode = 'ghost';
@@ -3517,14 +3603,19 @@
                     ghostElement.style.display = 'flex';
                 }
 
-                // Persist the current subtitle link in the room only on successful fetch
+                // Persist subtitle content in Firebase for sync between users
                 if (roomID) {
-                    database.ref('rooms/' + roomID).update({ subtitleSrc: subtitleUrl, subtitleMode: 'ghost', subtitleContent: text }).catch(() => {});
+                    database.ref('rooms/' + roomID).update({ 
+                        subtitleSrc: subtitleUrl, 
+                        subtitleMode: 'ghost', 
+                        subtitleContent: text 
+                    }).catch(() => {});
                 }
 
-                console.log("✅ Subtitles loaded into ghost overlay mode!");
+                console.log("✅ Subtitles synced! Count:", subtitleData.length);
             } catch (error) {
-                console.error("❌ Sync Error:", error);
+                console.error("❌ Subtitle error:", error);
+                currentSubtitleUrl = subtitleUrl; // Mark as attempted even on error
             }
         }
 
@@ -3717,6 +3808,12 @@
                 state: video.paused ? 'pause' : 'play'
             };
 
+            // Pause video in background for both users when modal opens
+            if (!video.paused) {
+                console.log('⏸️ Pausing video for both users (modal opened)');
+                video.pause();
+            }
+
             const loadingSection = document.getElementById('loading-section');
             const searchWrapper = document.getElementById('search-wrapper');
             const movieList = document.getElementById('movie-list');
@@ -3760,7 +3857,7 @@
                 .then(r => r.json())
                 .then(data => {
                     romanticAllMovies = (data.files || [])
-                        .filter(f => f.name && f.name.toLowerCase().endsWith('.mp4') && f.source === 'original')
+                        .filter(f => f.name && (f.name.toLowerCase().endsWith('.mp4') || f.name.toLowerCase().endsWith('.mkv')) && f.source === 'original')
                         .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
                     const elapsed = Date.now() - startedAt;
@@ -3809,6 +3906,49 @@
 
         function closeRomanticMovieModal() {
             hideRomanticMovieOverlay();
+            
+            // Load the last/current video from the room when movie list closes
+            database.ref('rooms/' + roomID).once('value').then(snap => {
+                const roomData = snap.val();
+                if (!roomData) return;
+                
+                const lastVideoUrl = roomData.videoSrc;
+                
+                if (lastVideoUrl) {
+                    console.log('📺 Loading last video from room for both users:', lastVideoUrl);
+                    
+                    // Ensure video is paused before loading - do NOT autoplay
+                    try {
+                        video.pause();
+                    } catch (e) {}
+                    
+                    // Mark that we should wait for ready animation before playing
+                    autoPlayAfterReady = false; // Don't auto-play yet
+                    
+                    // Update videoSrc to trigger load on both users (even if it's the same)
+                    database.ref('rooms/' + roomID).update({
+                        videoSrc: lastVideoUrl,
+                        loadingX: true,
+                        loadingO: true
+                    }).catch(() => {});
+                    
+                    // Reset cinema state to pause at the beginning for fresh sync
+                    database.ref('rooms/' + roomID + '/cinema').update({
+                        state: 'pause',
+                        time: 0,
+                        user: mySymbol,
+                        seekAction: 'closeButton'
+                    }).catch(() => {});
+                    
+                    // Load video locally (which will also trigger subtitle loading via oncanplay)
+                    // The ready animation will handle auto-play after 3 seconds
+                    setVideoSrcByUrl(lastVideoUrl, true);
+                } else {
+                    console.log('ℹ️  No video in room yet');
+                }
+            }).catch(err => {
+                console.error('Error loading last video:', err);
+            });
         }
 
         function togglePrivateLinkArea() {
@@ -3845,7 +3985,7 @@
             const standalones = [];
 
             list.forEach(m => {
-                const cleanName = m.name.replace('.mp4', '');
+                const cleanName = m.name.replace(/\.(mp4|mkv)$/i, '');
                 
                 if (cleanName.includes('_')) {
                     const [folderName, linkName] = cleanName.split('_');
@@ -3908,7 +4048,7 @@
                 movieDiv.onclick = () => playRomanticMovie(m.name);
                 movieDiv.innerHTML = `
                     <span class="link-icon">🎞️</span>
-                    <span class="folder-name">${m.name.replace('.mp4', '')}</span>
+                    <span class="folder-name">${m.name.replace(/\.(mp4|mkv)$/i, '')}</span>
                 `;
                 container.appendChild(movieDiv);
             });
@@ -3919,7 +4059,7 @@
             if (now - lastMovieSelectionTime < VIDEO_SELECTION_DEBOUNCE) return;
             lastMovieSelectionTime = now;
             
-            const cleanFileName = movieName.replace(/\.mp4$/i, '');
+            const cleanFileName = movieName.replace(/\.(mp4|mkv)$/i, '');
             const url = `https://archive.org/download/${ROMANTIC_ITEM_ID}/${encodeURIComponent(movieName)}`;
             database.ref('rooms/' + roomID).update({ modalOpen: false });
             sendMovieSelectionMessage(cleanFileName, partnerName);
@@ -3962,7 +4102,7 @@
             const standalones = [];
 
             romanticAllMovies.forEach(m => {
-                const cleanName = m.name.replace('.mp4', '');
+                const cleanName = m.name.replace(/\.(mp4|mkv)$/i, '');
                 
                 if (cleanName.includes('_')) {
                     const [folderName, linkName] = cleanName.split('_');
@@ -4007,7 +4147,7 @@
 
             // Search in standalones
             standalones.forEach(m => {
-                const cleanMovieName = m.name.replace('.mp4', '').replace(/_/g, ' ');
+                const cleanMovieName = m.name.replace(/\.(mp4|mkv)$/i, '').replace(/_/g, ' ');
                 if (searchTerms.some(term => cleanMovieName.toLowerCase().includes(term))) {
                     filteredMovies.push(m);
                 }
